@@ -1,0 +1,219 @@
+<%- include('../partials/header') %>
+    <div class="container-fluid p-0">
+        <%- include('../partials/sidebar', { activePage: 'subcategories' }) %>
+            <main>
+                <header class="main-header mb-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h1 class="h3 fw-bold mb-0">Manage Subcategories</h1>
+                            <p class="text-muted small mb-0">Finer classification of your news topics</p>
+                        </div>
+                        <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#addSubcategoryModal">
+                            <i class="bi bi-plus-lg me-2"></i>New Subcategory
+                        </button>
+                    </div>
+                </header>
+
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4">Name</th>
+                                    <th>Parent Category</th>
+                                    <th>Slug</th>
+                                    <th>Description</th>
+                                    <th>Created At</th>
+                                    <th class="text-end pe-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% subcategories.forEach(sub=> { %>
+                                    <tr id="row-<%= sub._id %>">
+                                        <td class="ps-4 fw-bold">
+                                            <%= sub.name %>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary bg-opacity-10 text-primary">
+                                                <%= sub.category ? sub.category.name : 'Unknown' %>
+                                            </span>
+                                        </td>
+                                        <td><code><%= sub.slug %></code></td>
+                                        <td>
+                                            <%= sub.description || 'N/A' %>
+                                        </td>
+                                        <td>
+                                            <%= new Date(sub.createdAt).toLocaleDateString() %>
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <button class="btn btn-sm btn-outline-primary me-2" data-json="<%= JSON.stringify({id: sub._id, name: sub.name, category: sub.category ? sub.category._id : '', slug: sub.slug, description: sub.description || ''}) %>" onclick="openEditSubcategoryModal(this)">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteSubcategory('<%= sub._id %>')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+    </div>
+
+    <!-- Add Subcategory Modal -->
+    <div class="modal fade" id="addSubcategoryModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow rounded-4">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold">Add New Subcategory</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form action="/admin/subcategories" method="POST">
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Name</label>
+                            <input type="text" name="name" class="form-control" required
+                                placeholder="e.g. Artificial Intelligence">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Parent Category</label>
+                            <select name="category" class="form-select" required>
+                                <option value="">Select Category</option>
+                                <% categories.forEach(cat=> { %>
+                                    <option value="<%= cat._id %>">
+                                        <%= cat.name %>
+                                    </option>
+                                    <% }) %>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Slug (Optional)</label>
+                            <input type="text" name="slug" class="form-control" placeholder="e.g. ai">
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Description</label>
+                            <textarea name="description" class="form-control" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-secondary px-4">Create Subcategory</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Subcategory Modal -->
+    <div class="modal fade" id="editSubcategoryModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow rounded-4">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold">Edit Subcategory</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="editSubcategoryForm">
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Name</label>
+                            <input type="text" name="name" id="editSubcategoryName" class="form-control" required placeholder="e.g. Artificial Intelligence">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Parent Category</label>
+                            <select name="category" id="editSubcategoryCategory" class="form-select" required>
+                                <option value="">Select Category</option>
+                                <% categories.forEach(cat=> { %>
+                                    <option value="<%= cat._id %>">
+                                        <%= cat.name %>
+                                    </option>
+                                    <% }) %>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Slug (Optional)</label>
+                            <input type="text" name="slug" id="editSubcategorySlug" class="form-control" placeholder="e.g. ai">
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Description</label>
+                            <textarea name="description" id="editSubcategoryDescription" class="form-control" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-secondary px-4">Update Subcategory</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function deleteSubcategory(id) {
+            if (confirm('Are you sure you want to permanently delete this subcategory?')) {
+                try {
+                    const response = await fetch(`/admin/subcategories/${id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    if (response.ok) {
+                        const row = document.getElementById(`row-${id}`);
+                        row.style.transition = 'all 0.4s ease';
+                        row.style.opacity = '0';
+                        row.style.transform = 'translateX(20px)';
+                        setTimeout(() => row.remove(), 400);
+                    } else {
+                        const errorText = await response.text();
+                        alert('Failed to delete subcategory: ' + errorText);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('An error occurred while deleting the subcategory.');
+                }
+            }
+        }
+
+        let currentEditSubcategoryId = null;
+
+        function openEditSubcategoryModal(button) {
+            const data = JSON.parse(button.dataset.json);
+            currentEditSubcategoryId = data.id;
+            document.getElementById('editSubcategoryName').value = data.name;
+            document.getElementById('editSubcategoryCategory').value = data.category;
+            document.getElementById('editSubcategorySlug').value = data.slug;
+            document.getElementById('editSubcategoryDescription').value = data.description;
+            const modal = new bootstrap.Modal(document.getElementById('editSubcategoryModal'));
+            modal.show();
+        }
+
+        document.getElementById('editSubcategoryForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            try {
+                const response = await fetch(`/admin/subcategories/${currentEditSubcategoryId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                if (response.ok) {
+                    alert('Subcategory updated successfully!');
+                    location.reload();
+                } else {
+                    const errorText = await response.text();
+                    alert('Failed to update subcategory: ' + errorText);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('An error occurred while updating the subcategory.');
+            }
+        });
+    </script>
+
+    <%- include('../partials/footer') %>

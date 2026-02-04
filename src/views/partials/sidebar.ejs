@@ -1,0 +1,63 @@
+<nav class="sidebar d-none d-lg-block">
+    <div class="sidebar-header">
+        <h4 class="mb-0 text-white fw-bold">
+            <i class="bi bi-newspaper me-2 text-primary"></i>News Hub
+        </h4>
+        <small class="text-white">Admin Panel v1.0</small>
+    </div>
+
+    <div class="pt-2">
+        <ul class="nav flex-column gap-1">
+            <li class="nav-item">
+                <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'dashboard' ? 'active' : '' %>"
+                    href="/admin/dashboard">
+                    <i class="bi bi-grid-1x2-fill me-2"></i> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'articles' ? 'active' : '' %>"
+                    href="/admin/articles">
+                    <i class="bi bi-file-earmark-richtext-fill me-2"></i> Articles
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'create' ? 'active' : '' %>"
+                    href="/admin/articles/create">
+                    <i class="bi bi-plus-square-fill me-2"></i> Create New
+                </a>
+            </li>
+            <div class="px-4 py-2">
+                <small class="text-white text-uppercase fw-bold"
+                    style="font-size: 0.65rem; letter-spacing: 0.05rem;">Organization</small>
+            </div>
+            <li class="nav-item">
+                <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'categories' ? 'active' : '' %>"
+                    href="/admin/categories">
+                    <i class="bi bi-tags-fill me-2"></i> Categories
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'subcategories' ? 'active' : '' %>"
+                    href="/admin/subcategories">
+                    <i class="bi bi-collection-fill me-2"></i> Subcategories
+                </a>
+            </li>
+            <div class="px-4 py-2 mt-2">
+                <small class="text-white text-uppercase fw-bold"
+                    style="font-size: 0.65rem; letter-spacing: 0.05rem;">Personal</small>
+            </div>
+            <li class="nav-item">
+                <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'account' ? 'active' : '' %>"
+                    href="/admin/account">
+                    <i class="bi bi-person-fill-gear me-2"></i> Account
+                </a>
+            </li>
+            <li class="nav-item mt-2">
+                <a class="nav-link text-danger-emphasis fw-semibold bg-danger bg-opacity-10 m-3 rounded-2"
+                    href="/admin/logout">
+                    <i class="bi bi-box-arrow-right me-2"></i> Logout
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
