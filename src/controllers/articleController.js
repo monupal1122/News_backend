@@ -192,6 +192,23 @@ exports.getArticleById = async (req, res) => {
     }
 };
 
+// @desc    Get article by SEO URL
+// @route   GET /api/articles/:category/:subcategory/:slug-:id
+exports.getArticleBySlug = async (req, res) => {
+    try {
+        // Article is already validated and attached by middleware
+        const article = await Article.findByIdAndUpdate(
+            req.article._id,
+            { $inc: { viewCount: 1 } },
+            { new: true }
+        ).populate('category subcategory');
+
+        res.status(200).json(article);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // @desc    Search articles
 // @route   GET /api/articles/search
 exports.searchArticles = async (req, res) => {
@@ -238,7 +255,8 @@ exports.createArticle = async (req, res) => {
             articleData.imageUrl = req.file.path;
         }
 
-        const article = await Article.create(articleData);
+        const article = new Article(articleData);
+        await article.save({ validateBeforeSave: false });
 
         // Clear cache
         try {
@@ -281,7 +299,14 @@ exports.updateArticle = async (req, res) => {
             articleData.imageUrl = req.file.path;
         }
 
-        const article = await Article.findByIdAndUpdate(req.params.id, articleData, { new: true });
+        const article = await Article.findById(req.params.id);
+        if (!article) {
+            if (req.originalUrl.startsWith('/admin')) return res.redirect('/admin/articles');
+            return res.status(404).json({ message: 'Article not found' });
+        }
+
+        Object.assign(article, articleData);
+        await article.save();
 
         if (!article) {
             if (req.originalUrl.startsWith('/admin')) return res.redirect('/admin/articles');
@@ -339,6 +364,30 @@ exports.deleteArticle = async (req, res) => {
         }
 
         res.redirect('/admin/articles');
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get articles by subcategory
+// @route   GET /api/articles/subcategory/:category/:subcategory
+exports.getArticlesBySubcategory = async (req, res) => {
+    try {
+        const { category, subcategory } = req.params;
+        const limit = parseInt(req.query.limit) || 20;
+
+        // Find subcategory by slug and check category
+        const subcategoryDoc = await Subcategory.findOne({ slug: subcategory }).populate('category');
+        if (!subcategoryDoc || subcategoryDoc.category.slug !== category) {
+            return res.status(404).json({ message: 'Subcategory not found' });
+        }
+
+        const articles = await Article.find({ subcategory: subcategoryDoc._id })
+            .populate('category subcategory')
+            .sort({ publishedAt: -1 })
+            .limit(limit);
+
+        res.status(200).json(articles);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

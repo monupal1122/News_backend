@@ -5,6 +5,7 @@ const categoryController = require('../controllers/categoryController');
 const authController = require('../controllers/authController');
 const DeleteCategory = require('../controllers/categoryController');
 const { apiLimiter, loginLimiter, forgotPasswordLimiter } = require('../middlewares/rateLimiter');
+const { validateSeoSlug } = require('../middlewares/seoMiddleware');
 
 // Auth Routes
 router.post('/auth/login', loginLimiter, authController.login);
@@ -15,8 +16,9 @@ router.post('/auth/reset-password/:token', authController.resetPassword);
 router.get('/articles', apiLimiter, articleController.getArticles);
 router.get('/articles/featured', articleController.getFeaturedArticles);
 router.get('/articles/category/:category', articleController.getArticlesByCategory);
-router.get('/articles/subcategory/:subcategory', articleController.getArticlesBySubcategory);
+router.get('/articles/subcategory/:category/:subcategory', articleController.getArticlesBySubcategory);
 router.get('/articles/search', articleController.searchArticles);
+router.get('/articles/:category/:subcategory/:slugId', validateSeoSlug, articleController.getArticleBySlug);
 router.get('/articles/:id', articleController.getArticleById);
 
 // Category Routes

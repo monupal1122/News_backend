@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { generateSlug, ensureUniqueSlug } = require('../utils/slugGenerator');
 
 const categorySchema = new mongoose.Schema({
     name: {
@@ -19,5 +20,13 @@ const categorySchema = new mongoose.Schema({
         trim: true
     }
 }, { timestamps: true });
+
+// Pre-save hook to generate slug
+categorySchema.pre('save', async function() {
+    if (this.isModified('name') || this.isNew) {
+        const baseSlug = generateSlug(this.name);
+        this.slug = await ensureUniqueSlug(baseSlug, this.constructor, this.isNew ? null : this._id);
+    }
+});
 
 module.exports = mongoose.model('Category', categorySchema);
