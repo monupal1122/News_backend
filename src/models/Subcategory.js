@@ -21,6 +21,15 @@ const subcategorySchema = new mongoose.Schema({
     description: {
         type: String,
         trim: true
+    },
+    displayOrder: {
+        type: Number,
+        default: 0
+    },
+    status: {
+        type: String,
+        enum: ['active', 'inactive'],
+        default: 'active'
     }
 }, { timestamps: true });
 
@@ -29,7 +38,7 @@ subcategorySchema.index({ name: 1, category: 1 }, { unique: true });
 subcategorySchema.index({ slug: 1, category: 1 }, { unique: true });
 
 // Pre-save hook to generate slug
-subcategorySchema.pre('save', async function() {
+subcategorySchema.pre('save', async function () {
     if (this.isModified('name') || this.isNew) {
         const baseSlug = generateSlug(this.name);
         // Ensure unique within category

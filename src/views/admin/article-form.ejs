@@ -17,7 +17,8 @@
                                 <p class="text-muted small mb-0">Craft and publish your next masterpiece</p>
                             </div>
                             <div class="d-flex gap-2">
-                                <a href="/admin/articles" class="btn btn-light px-4">Exit</a>
+                                <a href="<%= admin.role === 'admin' ? '/admin/articles' : '/author/articles' %>"
+                                    class="btn btn-light px-4">Exit</a>
                             </div>
                         </div>
                     </header>
@@ -29,134 +30,187 @@
                         </div>
                         <% } %>
 
-                            <form id="articleForm"
-                                action="/admin/articles<%= mode === 'edit' ? '/' + article._id : '' %>" method="POST"
-                                enctype="multipart/form-data">
-                                <input type="hidden" name="content" id="contentInput">
-                                <div class="row g-4">
-                                    <div class="col-lg-8">
-                                        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
-                                            <div class="mb-4">
-                                                <label
-                                                    class="form-label fw-bold text-muted small text-uppercase">Headline</label>
-                                                <input type="text"
-                                                    class="form-control form-control-lg border-0 bg-light rounded-3"
-                                                    name="title" value="<%= article ? article.title : '' %>"
-                                                    placeholder="Enter a catchy title..." required>
-                                            </div>
+                            <% const portalPrefix=admin.role==='admin' ? '/admin' : '/author' ; %>
+                                <form id="articleForm"
+                                    action="<%= portalPrefix %>/articles<%= mode === 'edit' ? '/' + article._id : '' %>"
+                                    method="POST" enctype="multipart/form-data">
+                                    <input type="hidden" name="content" id="contentInput">
+                                    <div class="row g-4">
+                                        <div class="col-lg-8">
+                                            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                                                <div class="mb-4">
+                                                    <label
+                                                        class="form-label fw-bold text-muted small text-uppercase">Headline</label>
+                                                    <input type="text"
+                                                        class="form-control form-control-lg border-0 bg-light rounded-3"
+                                                        name="title" value="<%= article ? article.title : '' %>"
+                                                        placeholder="Enter a catchy title..." required>
+                                                </div>
 
-                                            <div class="mb-4">
-                                                <label
-                                                    class="form-label fw-bold text-muted small text-uppercase">Executive
-                                                    Summary</label>
-                                                <textarea class="form-control border-0 bg-light rounded-3"
-                                                    name="description" rows="3"
-                                                    placeholder="Briefly describe what this story is about..."
-                                                    required><%= article ? article.description : '' %></textarea>
-                                            </div>
+                                                <div class="mb-4">
+                                                    <label
+                                                        class="form-label fw-bold text-muted small text-uppercase">Summary</label>
+                                                    <textarea class="form-control border-0 bg-light rounded-3"
+                                                        name="summary" rows="3"
+                                                        placeholder="Briefly describe what this story is about..."
+                                                        required><%= article ? article.summary : '' %></textarea>
+                                                </div>
 
-                                            <div class="mb-3">
-                                                <label class="form-label fw-bold text-muted small text-uppercase">Full
-                                                    Story</label>
-                                                <div id="editor" style="height: 400px;" class="rounded-3 bg-white">
-                                                    <%- article ? article.content : '' %>
+                                                <div class="mb-4">
+                                                    <label
+                                                        class="form-label fw-bold text-muted small text-uppercase">Tags
+                                                        (Comma separated)</label>
+                                                    <input type="text" class="form-control border-0 bg-light rounded-3"
+                                                        name="tags"
+                                                        value="<%= article && article.tags ? (Array.isArray(article.tags) ? article.tags.join(', ') : article.tags) : '' %>"
+                                                        placeholder="e.g. tech, future, ai">
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label
+                                                        class="form-label fw-bold text-muted small text-uppercase">Full
+                                                        Story</label>
+                                                    <div id="editor" style="height: 400px;" class="rounded-3 bg-white">
+                                                        <%- article ? article.content : '' %>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <div class="col-lg-4">
-                                        <div class="glass-card p-4 sticky-top" style="top: 100px;">
-                                            <h5 class="fw-bold mb-4">Publishing Settings</h5>
+                                        <div class="col-lg-4">
+                                            <div class="glass-card p-4 sticky-top" style="top: 100px;">
+                                                <h5 class="fw-bold mb-4">Publishing Settings</h5>
 
-                                            <div class="mb-3">
-                                                <label
-                                                    class="form-label fw-bold text-muted small text-uppercase">Category</label>
-                                                <select class="form-select border-0 bg-light" name="category"
-                                                    id="categorySelect" required>
-                                                    <option value="">Select Category</option>
-                                                    <% categories.forEach(cat=> { %>
-                                                        <option value="<%= cat._id %>" <%=article && article.category &&
-                                                            article.category.toString()===cat._id.toString()
-                                                            ? 'selected' : '' %>>
-                                                            <%= cat.name %>
+                                                <div class="mb-3">
+                                                    <label
+                                                        class="form-label fw-bold text-muted small text-uppercase">Status</label>
+                                                    <select class="form-select border-0 bg-light" name="publishStatus">
+                                                        <option value="draft" <%=article &&
+                                                            article.publishStatus==='draft' ? 'selected' : '' %>>Draft
                                                         </option>
-                                                        <% }) %>
-                                                </select>
-                                            </div>
+                                                        <option value="pending" <%=article &&
+                                                            article.publishStatus==='pending' ? 'selected' : '' %>
+                                                            >Pending
+                                                            Review</option>
+                                                        <option value="published" <%=article &&
+                                                            article.publishStatus==='published' ? 'selected' : '' %>
+                                                            >Published</option>
+                                                    </select>
+                                                </div>
 
-                                            <div class="mb-3">
-                                                <label
-                                                    class="form-label fw-bold text-muted small text-uppercase">Subcategory</label>
-                                                <select class="form-select border-0 bg-light" name="subcategory"
-                                                    id="subcategorySelect" required>
-                                                    <option value="">Select Subcategory</option>
-                                                    <% if (locals.subcategories) { %>
-                                                        <% subcategories.forEach(sub=> { %>
-                                                            <option value="<%= sub._id %>" <%=article &&
-                                                                article.subcategory &&
-                                                                article.subcategory.toString()===sub._id.toString()
+                                                <div class="mb-3">
+                                                    <label
+                                                        class="form-label fw-bold text-muted small text-uppercase">Category</label>
+                                                    <select class="form-select border-0 bg-light" name="category"
+                                                        id="categorySelect" required>
+                                                        <option value="">Select Category</option>
+                                                        <% categories.forEach(cat=> { %>
+                                                            <option value="<%= cat._id %>" <%=article &&
+                                                                article.category && (article.category._id ||
+                                                                article.category).toString()===cat._id.toString()
                                                                 ? 'selected' : '' %>>
-                                                                <%= sub.name %>
+                                                                <%= cat.name %>
                                                             </option>
                                                             <% }) %>
-                                                                <% } %>
-                                                </select>
-                                            </div>
-
-                                            <div class="mb-3">
-                                                <label
-                                                    class="form-label fw-bold text-muted small text-uppercase">Author</label>
-                                                <input type="text" class="form-control border-0 bg-light" name="author"
-                                                    value="<%= article ? article.author : admin.email.split('@')[0] %>"
-                                                    required>
-                                            </div>
-
-                                            <div class="mb-4">
-                                                <label class="form-label fw-bold text-muted small text-uppercase">Cover
-                                                    Image</label>
-                                                <div
-                                                    class="image-upload-wrapper rounded-3 bg-light p-3 text-center border-2 border-dashed border-secondary border-opacity-25">
-                                                    <% if (article && article.imageUrl) { %>
-                                                        <img src="<%= article.imageUrl %>"
-                                                            class="img-fluid rounded mb-3 shadow-sm" id="previewImg">
-                                                        <% } %>
-                                                            <input type="file" class="form-control" name="image"
-                                                                accept="image/*" id="imageInput">
-                                                            <p class="text-muted small mt-2 mb-0">Drag & drop or click
-                                                                to upload</p>
+                                                    </select>
                                                 </div>
+
+                                                <div class="mb-3">
+                                                    <label
+                                                        class="form-label fw-bold text-muted small text-uppercase">Subcategories</label>
+                                                    <select class="form-select border-0 bg-light" name="subcategories"
+                                                        id="subcategorySelect" multiple required size="5">
+                                                        <option value="" disabled>Select Subcategories (Hold Ctrl/Cmd)
+                                                        </option>
+                                                        <% if (locals.subcategories) { %>
+                                                            <% subcategories.forEach(sub=> { %>
+                                                                <option value="<%= sub._id %>" <%=article &&
+                                                                    article.subcategories &&
+                                                                    (article.subcategories.some(s=> (s._id ||
+                                                                    s).toString() === sub._id.toString()))
+                                                                    ? 'selected' : '' %>>
+                                                                    <%= sub.name %>
+                                                                </option>
+                                                                <% }) %>
+                                                                    <% } %>
+                                                    </select>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label
+                                                        class="form-label fw-bold text-muted small text-uppercase">Author</label>
+                                                    <% if (admin.role==='admin' && typeof authors !=='undefined' &&
+                                                        authors.length> 0) { %>
+                                                        <select class="form-select border-0 bg-light" name="author">
+                                                            <% authors.forEach(a=> { %>
+                                                                <option value="<%= a._id %>" <%=(article &&
+                                                                    article.author && (article.author._id ||
+                                                                    article.author).toString()===a._id.toString()) ||
+                                                                    (!article &&
+                                                                    admin._id.toString()===a._id.toString())
+                                                                    ? 'selected' : '' %>>
+                                                                    <%= a.name || a.email %>
+                                                                </option>
+                                                                <% }) %>
+                                                        </select>
+                                                        <% } else { %>
+                                                            <input type="text" class="form-control border-0 bg-light"
+                                                                value="<%= article && article.author ? (article.author.name || article.author.email) : admin.name %>"
+                                                                disabled>
+                                                            <input type="hidden" name="author"
+                                                                value="<%= article && article.author ? article.author._id : admin._id %>">
+                                                            <% } %>
+                                                </div>
+
+                                                <div class="mb-4">
+                                                    <label
+                                                        class="form-label fw-bold text-muted small text-uppercase">Cover
+                                                        Image</label>
+                                                    <div
+                                                        class="image-upload-wrapper rounded-3 bg-light p-3 text-center border-2 border-dashed border-secondary border-opacity-25">
+                                                        <% if (article && article.featuredImage) { %>
+                                                            <img src="<%= article.featuredImage %>"
+                                                                class="img-fluid rounded mb-3 shadow-sm"
+                                                                id="previewImg">
+                                                            <% } %>
+                                                                <input type="file" class="form-control" name="image"
+                                                                    accept="image/*" id="imageInput">
+                                                                <p class="text-muted small mt-2 mb-0">Drag & drop or
+                                                                    click
+                                                                    to upload</p>
+                                                    </div>
+                                                </div>
+
+                                                <div
+                                                    class="form-check form-switch mb-4 p-0 ps-5 d-flex align-items-center gap-3">
+                                                    <input class="form-check-input ms-0" type="checkbox" id="isFeatured"
+                                                        name="isFeatured" value="true" <%=article && article.isFeatured
+                                                        ? 'checked' : '' %>>
+                                                    <label class="form-check-label fw-bold" for="isFeatured">Mark as
+                                                        Featured</label>
+                                                </div>
+
+                                                <hr>
+
+                                                <div class="mb-3">
+                                                    <label
+                                                        class="form-label fw-bold text-muted small text-uppercase">Source
+                                                        Info (Optional)</label>
+                                                    <input type="text" class="form-control border-0 bg-light mb-2"
+                                                        name="sourceName" placeholder="Source Name"
+                                                        value="<%= article ? article.sourceName : '' %>">
+                                                    <input type="url" class="form-control border-0 bg-light"
+                                                        name="sourceUrl" placeholder="Source URL"
+                                                        value="<%= article ? article.sourceUrl : '' %>">
+                                                </div>
+
+                                                <button type="submit" class="btn btn-secondary w-100 py-3 mt-2">
+                                                    <%= mode==='edit' ? 'Save Changes' : 'Publish Story' %>
+                                                </button>
                                             </div>
-
-                                            <div
-                                                class="form-check form-switch mb-4 p-0 ps-5 d-flex align-items-center gap-3">
-                                                <input class="form-check-input ms-0" type="checkbox" id="isFeatured"
-                                                    name="isFeatured" value="true" <%=article && article.isFeatured
-                                                    ? 'checked' : '' %>>
-                                                <label class="form-check-label fw-bold" for="isFeatured">Mark as
-                                                    Featured</label>
-                                            </div>
-
-                                            <hr>
-
-                                            <div class="mb-3">
-                                                <label class="form-label fw-bold text-muted small text-uppercase">Source
-                                                    Info (Optional)</label>
-                                                <input type="text" class="form-control border-0 bg-light mb-2"
-                                                    name="sourceName" placeholder="Source Name"
-                                                    value="<%= article ? article.sourceName : '' %>">
-                                                <input type="url" class="form-control border-0 bg-light"
-                                                    name="sourceUrl" placeholder="Source URL"
-                                                    value="<%= article ? article.sourceUrl : '' %>">
-                                            </div>
-
-                                            <button type="submit" class="btn btn-secondary w-100 py-3 mt-2">
-                                                <%= mode==='edit' ? 'Save Changes' : 'Publish Story' %>
-                                            </button>
                                         </div>
                                     </div>
-                                </div>
-                            </form>
+                                </form>
                 </main>
         </div>
 
@@ -205,7 +259,7 @@
 
             categorySelect.addEventListener('change', async (e) => {
                 const categoryId = e.target.value;
-                subcategorySelect.innerHTML = '<option value="">Select Subcategory</option>';
+                subcategorySelect.innerHTML = '<option value="" disabled>Select Subcategories (Hold Ctrl/Cmd)</option>';
 
                 if (!categoryId) return;
 

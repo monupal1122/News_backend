@@ -3,6 +3,11 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
 const adminSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, 'Name is required'],
+    trim: true
+  },
   email: {
     type: String,
     required: [true, 'Email is required'],
@@ -16,6 +21,20 @@ const adminSchema = new mongoose.Schema({
     minlength: 6,
     select: false
   },
+  bio: {
+    type: String,
+    trim: true
+  },
+  profileImage: {
+    type: String,
+    default: ''
+  },
+  socialLinks: {
+    twitter: String,
+    linkedin: String,
+    facebook: String,
+    instagram: String
+  },
   googleId: {
     type: String,
     unique: true,
@@ -23,8 +42,8 @@ const adminSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin'],
-    default: 'admin'
+    enum: ['admin', 'author'],
+    default: 'author'
   },
   passwordResetToken: String,
   passwordResetExpires: Date,

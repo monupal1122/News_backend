@@ -1,32 +1,75 @@
 const Article = require('../models/Article');
 const Category = require('../models/Category');
 const Subcategory = require('../models/Subcategory');
+const Admin = require('../models/Admin');
 
 exports.getDashboard = async (req, res) => {
     try {
-        const articleCount = await Article.countDocuments();
-        const featuredCount = await Article.countDocuments({ isFeatured: true });
+        const query = req.admin.role === 'admin' ? {} : { author: req.admin._id };
+
+        const articleCount = await Article.countDocuments(query);
+        const featuredCount = await Article.countDocuments({ ...query, isFeatured: true });
+
         const totalViews = await Article.aggregate([
+            { $match: query },
             { $group: { _id: null, total: { $sum: "$viewCount" } } }
         ]);
 
-        const latestArticles = await Article.find().populate('category').sort({ createdAt: -1 }).limit(5);
+        // Analytics: Articles per day (Last 7 Days)
+        const last7Days = new Date();
+        last7Days.setDate(last7Days.getDate() - 7);
 
-        res.render('admin/dashboard', {
+        const articlesPerDay = await Article.aggregate([
+            { $match: { ...query, createdAt: { $gte: last7Days } } },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+
+        // Fill in missing days
+        const chartData = { labels: [], data: [] };
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            const found = articlesPerDay.find(item => item._id === dateStr);
+
+            chartData.labels.push(d.toLocaleDateString('en-US', { weekday: 'short' }));
+            chartData.data.push(found ? found.count : 0);
+        }
+
+        // Top Performing Articles
+        const topArticles = await Article.find(query)
+            .select('title viewCount')
+            .sort({ viewCount: -1 })
+            .limit(5);
+
+        const latestArticles = await Article.find(query).populate('category').sort({ createdAt: -1 }).limit(5);
+
+        const view = req.admin.role === 'admin' ? 'admin/dashboard' : 'author/dashboard';
+        res.render(view, {
             admin: req.admin,
             articleCount,
             featuredCount,
             totalViews: totalViews.length > 0 ? totalViews[0].total : 0,
-            latestArticles
+            latestArticles,
+            chartData,
+            topArticles
         });
     } catch (error) {
+        console.error(error);
         res.status(500).send('Server Error');
     }
 };
 
 exports.getArticles = async (req, res) => {
     try {
-        const articles = await Article.find().populate('category').sort({ createdAt: -1 });
+        const query = req.admin.role === 'admin' ? {} : { author: req.admin._id };
+        const articles = await Article.find(query).populate('category author').sort({ createdAt: -1 });
         res.render('admin/articles', { articles, admin: req.admin });
     } catch (error) {
         res.status(500).send('Server Error');
@@ -35,27 +78,41 @@ exports.getArticles = async (req, res) => {
 
 exports.getCreateArticle = async (req, res) => {
     const categories = await Category.find().sort({ name: 1 });
+    const authors = req.admin.role === 'admin' ? await Admin.find().sort({ name: 1 }) : [];
+
     res.render('admin/article-form', {
-        article: null,
-        admin: req.admin,
         mode: 'create',
-        categories
+        categories,
+        authors,
+        article: null, // Explicitly set to null for new articles
+        admin: req.admin
     });
 };
 
 exports.getEditArticle = async (req, res) => {
     try {
-        const article = await Article.findById(req.params.id);
-        if (!article) return res.redirect('/admin/articles');
+        const article = await Article.findById(req.params.id).populate('author category subcategories');
+        if (!article) {
+            const redirectUrl = req.admin.role === 'admin' ? '/admin/articles' : '/author/articles';
+            return res.redirect(redirectUrl);
+        }
+
+        // Ownership validation
+        if (req.admin.role !== 'admin' && article.author.toString() !== req.admin._id.toString()) {
+            return res.status(403).send('Not authorized to edit this article');
+        }
+
         const categories = await Category.find().sort({ name: 1 });
         const subcategories = article.category ? await Subcategory.find({ category: article.category }).sort({ name: 1 }) : [];
+        const authors = req.admin.role === 'admin' ? await Admin.find().sort({ name: 1 }) : [];
 
         res.render('admin/article-form', {
             article,
             admin: req.admin,
             mode: 'edit',
             categories,
-            subcategories
+            subcategories,
+            authors
         });
     } catch (error) {
         res.status(500).send('Server Error');
@@ -84,9 +141,9 @@ exports.deleteCategory = async (req, res) => {
 exports.updateCategory = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, slug, description } = req.body;
+        const { name, slug, description, status } = req.body;
         const updatedSlug = slug || name.toLowerCase().replace(/ /g, '-');
-        await Category.findByIdAndUpdate(id, { name, slug: updatedSlug, description });
+        await Category.findByIdAndUpdate(id, { name, slug: updatedSlug, description, status });
         res.status(200).json({ message: 'Category updated' });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -121,9 +178,16 @@ exports.deletesubcategory = async (req, res) => {
 exports.updatesubcategory = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, slug, category, description } = req.body;
+        const { name, slug, category, description, status, displayOrder } = req.body;
         const updatedSlug = slug || name.toLowerCase().replace(/ /g, '-');
-        await Subcategory.findByIdAndUpdate(id, { name, slug: updatedSlug, category, description });
+        await Subcategory.findByIdAndUpdate(id, {
+            name,
+            slug: updatedSlug,
+            category,
+            description,
+            status,
+            displayOrder
+        });
         res.status(200).json({ message: 'Subcategory updated' });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -132,4 +196,123 @@ exports.updatesubcategory = async (req, res) => {
 
 exports.getAccount = async (req, res) => {
     res.render('admin/account', { admin: req.admin });
+};
+
+exports.getAuthors = async (req, res) => {
+    try {
+        const authors = await Admin.find().sort({ name: 1 });
+        res.render('admin/authors', { authors, admin: req.admin, activePage: 'authors' });
+    } catch (error) {
+        res.status(500).send('Server Error');
+    }
+};
+
+exports.createAuthor = async (req, res) => {
+    try {
+        const { name, email, password, role, bio } = req.body;
+
+        // Check if user already exists
+        const existing = await Admin.findOne({ email: email.toLowerCase() });
+        if (existing) {
+            return res.status(400).json({ message: 'User with this email already exists' });
+        }
+
+        await Admin.create({
+            name,
+            email,
+            password,
+            role: role || 'author',
+            bio
+        });
+
+        res.status(201).json({ message: 'Author account created successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.updateAuthor = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { role, name, bio } = req.body;
+
+        const author = await Admin.findById(id);
+        if (!author) return res.status(404).json({ message: 'Author not found' });
+
+        // Update fields if provided
+        if (role) author.role = role;
+        if (name) author.name = name;
+        if (bio !== undefined) author.bio = bio;
+
+        await author.save();
+        res.status(200).json({ message: 'Author updated successfully', author });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.deleteAuthor = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Prevent deleting self
+        if (id === req.admin._id.toString()) {
+            return res.status(400).json({ message: 'Cannot delete your own account' });
+        }
+
+        // Check for articles
+        const articleCount = await Article.countDocuments({ author: id });
+        if (articleCount > 0) {
+            return res.status(400).json({ message: 'Cannot delete author with associated articles. Reassign or delete articles first.' });
+        }
+
+        await Admin.findByIdAndDelete(id);
+        res.status(200).json({ message: 'Author deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.updateProfile = async (req, res) => {
+    try {
+        const { name, bio, twitter, linkedin, facebook, instagram } = req.body;
+
+        const updateData = {
+            name,
+            bio,
+            socialLinks: { twitter, linkedin, facebook, instagram }
+        };
+
+        if (req.file) {
+            updateData.profileImage = req.file.path; // Cloudinary URL
+        }
+
+        await Admin.findByIdAndUpdate(req.admin._id, updateData);
+
+        req.flash('success_msg', 'Profile updated successfully');
+        const redirectUrl = req.admin.role === 'admin' ? '/admin/account' : '/author/account';
+        res.redirect(redirectUrl);
+    } catch (error) {
+        console.error(error);
+        req.flash('error_msg', 'Failed to update profile');
+        const redirectUrl = req.admin.role === 'admin' ? '/admin/account' : '/author/account';
+        res.redirect(redirectUrl);
+    }
+};
+
+exports.getArticlesByAuthor = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const author = await Admin.findById(id);
+        if (!author) return res.redirect('/admin/authors');
+
+        const articles = await Article.find({ author: id }).populate('category author').sort({ createdAt: -1 });
+
+        res.render('admin/articles', {
+            articles,
+            admin: req.admin,
+            title: `Articles by ${author.name}`
+        });
+    } catch (error) {
+        res.status(500).send('Server Error');
+    }
 };

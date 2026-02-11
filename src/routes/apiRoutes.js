@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const articleController = require('../controllers/articleController');
 const categoryController = require('../controllers/categoryController');
+const authorController = require('../controllers/authorController');
 const authController = require('../controllers/authController');
 const DeleteCategory = require('../controllers/categoryController');
 const { apiLimiter, loginLimiter, forgotPasswordLimiter } = require('../middlewares/rateLimiter');
@@ -20,6 +21,12 @@ router.get('/articles/subcategory/:category/:subcategory', articleController.get
 router.get('/articles/search', articleController.searchArticles);
 router.get('/articles/:category/:subcategory/:slugId', validateSeoSlug, articleController.getArticleBySlug);
 router.get('/articles/:id', articleController.getArticleById);
+router.get('/articles/public/:publicId', articleController.getArticleByPublicId);
+router.get('/articles/author/:id', authorController.getAuthorArticles);
+router.get('/articles/tag/:tag', articleController.getArticlesByTag);
+
+// Author Routes
+router.get('/authors/:id', authorController.getAuthorProfile);
 
 // Category Routes
 router.get('/categories', categoryController.getCategories);

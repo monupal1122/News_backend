@@ -5,6 +5,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const apiRoutes = require('./routes/apiRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const authorRoutes = require('./routes/authorRoutes');
 const session = require('express-session');
 const passport = require('./config/passport');
 const flash = require('connect-flash');
@@ -51,10 +52,11 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api', apiRoutes);
 app.use('/admin', adminRoutes);
+app.use('/author', authorRoutes);
 
 // Root redirect
 app.get('/', (req, res) => {
-    res.redirect('/admin/login');
+    res.redirect('/author/login');
 });
 
 // Error Handling

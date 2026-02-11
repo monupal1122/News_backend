@@ -4,15 +4,16 @@ const adminController = require('../controllers/adminController');
 const authController = require('../controllers/authController');
 const passport = require('passport');
 const articleController = require('../controllers/articleController');
-const { protectAdmin } = require('../middlewares/authMiddleware');
+const { protectAdmin, restrictTo } = require('../middlewares/authMiddleware');
 const Category = require('../models/Category');
 const Subcategory = require('../models/Subcategory');
 const { upload } = require('../config/cloudinary');
 const { loginLimiter, forgotPasswordLimiter } = require('../middlewares/rateLimiter');
 
 // Auth
+router.get('/', (req, res) => res.redirect('/admin/login'));
 router.get('/login', (req, res) => res.render('admin/login'));
-router.post('/login', loginLimiter, authController.login);
+router.post('/login', loginLimiter, authController.adminLogin);
 router.get('/logout', authController.logout);
 
 // Google Auth Middleware Check
@@ -40,33 +41,46 @@ router.post('/reset-password/:token', authController.resetPassword);
 // Protected Admin Routes
 router.use(protectAdmin);
 
-router.get('/dashboard', adminController.getDashboard);
+router.get('/dashboard', restrictTo('admin'), adminController.getDashboard);
 router.get('/articles', adminController.getArticles);
-router.get('/articles/create', adminController.getCreateArticle);
+router.get('/articles/create', restrictTo('author'), adminController.getCreateArticle);
 router.get('/articles/edit/:id', adminController.getEditArticle);
 
-// Categories
-router.get('/categories', adminController.getCategories);
-router.post('/categories', async (req, res) => {
+// Categories (Admin Only)
+router.get('/categories', restrictTo('admin'), adminController.getCategories);
+router.post('/categories', restrictTo('admin'), async (req, res) => {
     try {
-        const { name, slug, description } = req.body;
-        await Category.create({ name, slug: slug || name.toLowerCase().replace(/ /g, '-'), description });
+        const { name, slug, description, status } = req.body;
+        await Category.create({
+            name,
+            slug: slug || name.toLowerCase().replace(/ /g, '-'),
+            description,
+            status: status || 'active'
+        });
         res.redirect('/admin/categories');
     } catch (error) {
         res.status(500).send(error.message);
     }
 });
 
-router.delete('/delete/categories/:id',protectAdmin, adminController.deleteCategory);
-router.put('/update/categories/:id',protectAdmin, adminController.updateCategory);
-// Subcategories
-router.get('/subcategories', adminController.getSubcategories);
-router.put('/subcategories/:id', adminController.updatesubcategory);
-router.delete('/subcategories/:id', adminController.deletesubcategory);
-router.post('/subcategories', async (req, res) => {
+router.delete('/delete/categories/:id', restrictTo('admin'), adminController.deleteCategory);
+router.put('/update/categories/:id', restrictTo('admin'), adminController.updateCategory);
+
+// Subcategories (Admin Only)
+router.get('/subcategories', restrictTo('admin'), adminController.getSubcategories);
+router.put('/subcategories/:id', restrictTo('admin'), adminController.updatesubcategory);
+router.delete('/subcategories/:id', restrictTo('admin'), adminController.deletesubcategory);
+router.post('/subcategories', restrictTo('admin'), async (req, res) => {
     try {
-        const { name, slug, category,description } = req.body;
-        await Subcategory.create({ name, slug: slug || name.toLowerCase().replace(/ /g, '-'),description, category });
+        const { name, slug, category, description, status, displayOrder } = req.body;
+        await Subcategory.create({
+            name,
+            slug: slug || name.toLowerCase().replace(/ /g, '-'),
+            description,
+            category,
+            status: status || 'active',
+            displayOrder: displayOrder || 0
+        });
         res.redirect('/admin/subcategories');
     } catch (error) {
         res.status(500).send(error.message);
@@ -75,7 +89,15 @@ router.post('/subcategories', async (req, res) => {
 
 // Account & Settings
 router.get('/account', adminController.getAccount);
+router.post('/update-profile', upload.single('profileImage'), adminController.updateProfile);
 router.post('/update-password', authController.updatePassword);
+
+// Authors Management (Admin sees all, Author sees list but can't edit)
+router.get('/authors', adminController.getAuthors);
+router.post('/authors', restrictTo('admin'), adminController.createAuthor);
+router.put('/authors/:id', restrictTo('admin'), adminController.updateAuthor);
+router.delete('/authors/:id', restrictTo('admin'), adminController.deleteAuthor);
+router.get('/authors/:id/articles', restrictTo('admin'), adminController.getArticlesByAuthor);
 
 // Article CRUD (called via AJAX or form submission)
 router.post('/articles', upload.single('image'), articleController.createArticle);

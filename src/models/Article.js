@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { generateSlug, ensureUniqueSlug } = require('../utils/slugGenerator');
+const { generateNumericId } = require('../utils/idGenerator');
 
 const articleSchema = new mongoose.Schema({
     title: {
@@ -15,9 +16,14 @@ const articleSchema = new mongoose.Schema({
         lowercase: true,
         trim: true
     },
-    description: {
+    publicId: {
+        type: Number,
+        unique: true,
+        index: true
+    },
+    summary: {
         type: String,
-        required: [true, 'Description is required']
+        trim: true
     },
     content: {
         type: String,
@@ -29,24 +35,42 @@ const articleSchema = new mongoose.Schema({
         required: [true, 'Category is required'],
         index: true
     },
-    subcategory: {
+    subcategories: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Subcategory',
-        required: [true, 'Subcategory is required'],
         index: true
-    },
-    imageUrl: {
+    }],
+    featuredImage: {
         type: String,
         default: ''
     },
-    author: {
+    mediaGallery: [{
+        type: String
+    }],
+    tags: [{
         type: String,
-        required: [true, 'Author is required']
+        index: true
+    }],
+    author: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Admin',
+        required: [true, 'Author is required'],
+        index: true
+    },
+    publishStatus: {
+        type: String,
+        enum: ['draft', 'pending', 'published'],
+        default: 'draft',
+        index: true
     },
     publishedAt: {
         type: Date,
-        default: Date.now,
         index: true
+    },
+    seoMetadata: {
+        title: String,
+        description: String,
+        keywords: [String]
     },
     sourceName: {
         type: String,
@@ -70,15 +94,44 @@ const articleSchema = new mongoose.Schema({
 // Full-text index for searching
 articleSchema.index({ title: 'text', description: 'text', content: 'text' });
 
-// Pre-save hook to generate slug
-articleSchema.pre('save', async function (next) {
-    // Only generate slug if title is modified or it is a new document
-    if (this.isModified('title') || this.isNew) {
-        const baseSlug = generateSlug(this.title);
-        this.slug = await ensureUniqueSlug(baseSlug, this.constructor, this.isNew ? null : this._id);
+// Pre-validate hook to generate slug and publicId
+articleSchema.pre('validate', async function () {
+    try {
+        // Handle Slug
+        if (this.isModified('title') || !this.slug) {
+            const baseSlug = generateSlug(this.title || 'untitled');
+            this.slug = await ensureUniqueSlug(baseSlug, this.constructor, this.isNew ? null : this._id);
+        }
+
+        // Handle PublicId
+        if (this.isNew && !this.publicId) {
+            this.publicId = await generateUniquePublicId(this.constructor);
+        }
+
+        // Handle Tags normalization
+        if (this.tags && Array.isArray(this.tags)) {
+            this.tags = this.tags.map(tag => tag.trim().toLowerCase());
+        }
+    } catch (error) {
+        throw error;
     }
-    // Continue if we don't need to update slug, or after updating it
 });
+
+// Helper function to generate unique publicId
+async function generateUniquePublicId(Model) {
+    const maxAttempts = 10;
+
+    for (let i = 0; i < maxAttempts; i++) {
+        const publicId = generateNumericId();
+        const existing = await Model.findOne({ publicId });
+
+        if (!existing) {
+            return publicId;
+        }
+    }
+
+    throw new Error('Unable to generate unique public ID after multiple attempts');
+}
 
 const Article = mongoose.model('Article', articleSchema);
 module.exports = Article;

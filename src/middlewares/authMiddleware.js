@@ -13,7 +13,8 @@ const protectAdmin = async (req, res, next) => {
         if (req.originalUrl.startsWith('/api')) {
             return res.status(401).json({ message: 'Not authorized, no token' });
         }
-        return res.redirect('/admin/login');
+        const redirectUrl = req.originalUrl.startsWith('/author') ? '/author/login' : '/admin/login';
+        return res.redirect(redirectUrl);
     }
 
     try {
@@ -27,7 +28,8 @@ const protectAdmin = async (req, res, next) => {
             if (req.originalUrl.startsWith('/api')) {
                 return res.status(401).json({ message: 'Not authorized, user not found' });
             }
-            return res.redirect('/admin/login');
+            const redirectUrl = req.originalUrl.startsWith('/author') ? '/author/login' : '/admin/login';
+            return res.redirect(redirectUrl);
         }
 
         // 4) Check if user changed password after the token was issued
@@ -36,7 +38,8 @@ const protectAdmin = async (req, res, next) => {
             if (req.originalUrl.startsWith('/api')) {
                 return res.status(401).json({ message: 'User recently changed password! Please log in again.' });
             }
-            return res.redirect('/admin/login');
+            const redirectUrl = req.originalUrl.startsWith('/author') ? '/author/login' : '/admin/login';
+            return res.redirect(redirectUrl);
         }
 
         // Grant access to protected route
@@ -50,8 +53,26 @@ const protectAdmin = async (req, res, next) => {
         if (req.originalUrl.startsWith('/api')) {
             return res.status(401).json({ message: 'Not authorized, token failed' });
         }
-        return res.redirect('/admin/login');
+        const redirectUrl = req.originalUrl.startsWith('/author') ? '/author/login' : '/admin/login';
+        return res.redirect(redirectUrl);
     }
 };
 
-module.exports = { protectAdmin };
+const restrictTo = (...roles) => {
+    return (req, res, next) => {
+        // req.admin is set by protectAdmin
+        if (!roles.includes(req.admin.role)) {
+            if (req.originalUrl.startsWith('/api')) {
+                return res.status(403).json({
+                    message: 'You do not have permission to perform this action'
+                });
+            }
+            return res.status(403).render('error', {
+                message: 'You do not have permission to access this page'
+            });
+        }
+        next();
+    };
+};
+
+module.exports = { protectAdmin, restrictTo };

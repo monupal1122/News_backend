@@ -18,7 +18,8 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
                 }
 
                 // If not, check if an admin with the same email exists
-                admin = await Admin.findOne({ email: profile.emails[0].value });
+                const email = profile.emails[0].value.toLowerCase();
+                admin = await Admin.findOne({ email: email.toLowerCase() });
 
                 if (admin) {
                     admin.googleId = profile.id;

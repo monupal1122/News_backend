@@ -1,76 +1,66 @@
 /**
- * Generates a short, meaningful slug in the SAME language as input
- * @param {string} text - The text to convert to slug
- * @param {number} maxWords - Maximum number of words (default: 4)
- * @returns {string} The generated slug
+ * Generate a meaningful SEO slug (supports Hindi + English + mixed text)
+ * @param {string} text
+ * @param {number} maxWords
+ * @returns {string}
  */
-function generateSlug(text, maxWords = 8) {
-  if (typeof text !== 'string' || !text.trim()) {
-    return '';
-  }
+function generateSlug(text, maxWords = 12) {
+  if (typeof text !== "string") return "";
 
-  // Stop words for different languages
+  const clean = text.trim();
+  if (!clean) return "";
+
+  // Stop words (English + Hindi)
   const stopWords = new Set([
     // English
-    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-    'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'been', 'be',
-    'this', 'that', 'these', 'those', 'will', 'have', 'has', 'had',
-    // Hindi (Devanagari script)
-    'का', 'की', 'के', 'को', 'ने', 'से', 'में', 'पर', 'और', 'या',
-    'है', 'हैं', 'था', 'थी', 'थे', 'हो', 'हुए', 'गया', 'गई', 'गए',
-    'एक', 'यह', 'वह', 'इस', 'उस', 'कि', 'जो', 'तक', 'भी', 'ही', 'कर'
+    "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for",
+    "of", "with", "by", "from", "as", "is", "was", "are", "been", "be",
+    "this", "that", "these", "those", "will", "have", "has", "had",
+    "what", "where", "when", "who", "why", "how", "all", "any", "both",
+    "each", "few", "more", "most", "other", "some", "such", "no", "nor",
+    "not", "only", "own", "same", "so", "than", "too", "very", "can",
+    "just", "should", "now", "it", "its",
+
+    // Hindi
+    "का", "की", "के", "को", "ने", "से", "में", "पर", "और", "या",
+    "है", "हैं", "था", "थी", "थे", "हो", "हुए", "गया", "गई", "गए",
+    "एक", "यह", "वह", "इस", "उस", "कि", "जो", "तक", "भी", "ही", "कर",
+    "किया", "liye", "saath", "kon", "kya", "kaise"
   ]);
 
-  // Split text into words
-  const words = text
+  // Replace punctuation/symbols with space to avoid word concatenation
+  const words = clean
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
     .trim()
     .split(/\s+/)
-    .filter(word => word.length > 0);
+    .filter(Boolean);
 
-  // Keep meaningful words only
-  const meaningfulWords = [];
-  
+  const meaningful = [];
+
   for (let i = 0; i < words.length; i++) {
-    const word = words[i];
-    
-    // Always keep first word
-    if (i === 0) {
-      meaningfulWords.push(word);
-      continue;
+    const w = words[i];
+    const normalized = w.toLowerCase();
+
+    // Always keep first word to ensure slug isn't empty, otherwise filtered
+    if (i === 0 || !stopWords.has(normalized)) {
+      meaningful.push(normalized);
     }
-    
-    // Skip stop words (case-insensitive for English, exact match for Hindi)
-    if (stopWords.has(word.toLowerCase()) || stopWords.has(word)) {
-      continue;
-    }
-    
-    meaningfulWords.push(word);
-    
-    // Stop when we have enough words
-    if (meaningfulWords.length >= maxWords) {
-      break;
-    }
+
+    if (meaningful.length >= maxWords) break;
   }
 
-  // Create slug from meaningful words
-  let slug = meaningfulWords
-    .join('-')
-    .toLowerCase()
-    // Remove special characters but keep letters from all languages
-    .replace(/[^\u0900-\u097F\u0980-\u09FF\u0A00-\u0A7F\u0A80-\u0AFFa-z0-9\s-]/gi, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-
-  return slug;
+  return meaningful
+    .join("-")
+    .replace(/-+/g, "-") // Ensure no double hyphens
+    .replace(/^-|-$/g, ""); // Trim hyphens
 }
 
 /**
- * Ensures slug uniqueness by appending a number if needed
- * @param {string} baseSlug - The base slug
- * @param {Model} Model - The Mongoose model to check against
- * @param {string} excludeId - ID to exclude from uniqueness check (for updates)
- * @returns {string} The unique slug
+ * Ensure slug uniqueness in MongoDB
+ * @param {string} baseSlug
+ * @param {mongoose.Model} Model
+ * @param {string|null} excludeId
+ * @returns {Promise<string>}
  */
 async function ensureUniqueSlug(baseSlug, Model, excludeId = null) {
   let slug = baseSlug;
@@ -78,20 +68,13 @@ async function ensureUniqueSlug(baseSlug, Model, excludeId = null) {
 
   while (true) {
     const query = { slug };
-    if (excludeId) {
-      query._id = { $ne: excludeId };
-    }
+    if (excludeId) query._id = { $ne: excludeId };
 
-    const existing = await Model.findOne(query);
-    if (!existing) {
-      break;
-    }
+    const exists = await Model.exists(query);
+    if (!exists) return slug;
 
-    slug = `${baseSlug}-${counter}`;
-    counter++;
+    slug = `${baseSlug}-${counter++}`;
   }
-
-  return slug;
 }
 
 module.exports = {

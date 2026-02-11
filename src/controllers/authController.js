@@ -20,27 +20,28 @@ const sendResponse = (req, res, statusCode, data, redirectPath) => {
     res.status(statusCode).json(data);
 };
 
-exports.login = async (req, res) => {
+const handleLogin = async (req, res, requiredRole, loginView) => {
     try {
         const { email, password } = req.body;
 
         if (!email || !password) {
-            if (req.originalUrl.startsWith('/api')) {
-                return res.status(400).json({ message: 'Please provide email and password' });
-            }
-            return res.render('admin/login', { error: 'Please provide email and password' });
+            return res.render(loginView, { error: 'Please provide email and password' });
         }
 
-        const admin = await Admin.findOne({ email }).select('+password');
+        const user = await Admin.findOne({ email: email.toLowerCase() }).select('+password');
 
-        if (!admin || !(await admin.comparePassword(password, admin.password))) {
-            if (req.originalUrl.startsWith('/api')) {
-                return res.status(401).json({ message: 'Incorrect email or password' });
-            }
-            return res.render('admin/login', { error: 'Incorrect email or password' });
+        if (!user || !(await user.comparePassword(password, user.password))) {
+            return res.render(loginView, { error: 'Incorrect email or password' });
         }
 
-        const token = signToken(admin._id);
+        // Role verification
+        if (user.role !== requiredRole) {
+            return res.render(loginView, {
+                error: `Access Denied: This portal is for ${requiredRole}s only.`
+            });
+        }
+
+        const token = signToken(user._id);
         const cookieOptions = {
             expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
             httpOnly: true,
@@ -49,16 +50,41 @@ exports.login = async (req, res) => {
 
         res.cookie('token', token, cookieOptions);
 
-        if (req.originalUrl.startsWith('/api')) {
-            admin.password = undefined;
-            return res.status(200).json({
-                status: 'success',
-                token,
-                data: { admin }
-            });
+        const redirectPath = user.role === 'admin' ? '/admin/dashboard' : '/author/dashboard';
+        res.redirect(redirectPath);
+    } catch (error) {
+        console.error('LOGIN ERROR:', error);
+        res.status(500).render(loginView, { error: 'An internal error occurred. Please try again.' });
+    }
+};
+
+exports.adminLogin = async (req, res) => {
+    await handleLogin(req, res, 'admin', 'admin/login');
+};
+
+exports.authorLogin = async (req, res) => {
+    await handleLogin(req, res, 'author', 'author/login');
+};
+
+exports.login = async (req, res) => {
+    // Keeping this for generic API login if needed
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) return res.status(400).json({ message: 'Missing credentials' });
+
+        const user = await Admin.findOne({ email: email.toLowerCase() }).select('+password');
+        if (!user || !(await user.comparePassword(password, user.password))) {
+            return res.status(401).json({ message: 'Incorrect email or password' });
         }
 
-        res.redirect('/admin/dashboard');
+        const token = signToken(user._id);
+        res.cookie('token', token, {
+            expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production'
+        });
+
+        res.status(200).json({ status: 'success', token, data: { user } });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -69,6 +95,11 @@ exports.logout = (req, res) => {
         expires: new Date(Date.now() + 10 * 1000),
         httpOnly: true
     });
+
+    // Redirect based on the route that called logout
+    if (req.originalUrl.startsWith('/author')) {
+        return res.redirect('/author/login');
+    }
     res.redirect('/admin/login');
 };
 
@@ -244,7 +275,8 @@ exports.googleCallback = (req, res) => {
     };
 
     res.cookie('token', token, cookieOptions);
-    res.redirect('/admin/dashboard');
+    const redirectPath = req.user.role === 'admin' ? '/admin/dashboard' : '/author/dashboard';
+    res.redirect(redirectPath);
 };
 
 exports.updatePassword = async (req, res) => {
@@ -276,10 +308,12 @@ exports.updatePassword = async (req, res) => {
         await admin.save();
 
         req.flash('success_msg', 'Password updated successfully!');
-        res.redirect('/admin/account');
+        const redirectUrl = req.admin.role === 'admin' ? '/admin/account' : '/author/account';
+        res.redirect(redirectUrl);
     } catch (error) {
         console.error('UPDATE PASSWORD ERROR:', error);
         req.flash('error_msg', 'An error occurred while updating the password.');
-        res.redirect('/admin/account');
+        const redirectUrl = req.admin.role === 'admin' ? '/admin/account' : '/author/account';
+        res.redirect(redirectUrl);
     }
 };

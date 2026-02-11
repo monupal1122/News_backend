@@ -117,56 +117,71 @@
                         <div class="col-lg-6">
                             <!-- Profile Information Card -->
                             <div class="card border-0 shadow-sm rounded-4 h-100">
-                                <div class="card-header bg-white py-3 border-0">
-                                    <h5 class="fw-bold mb-0">System Profile</h5>
+                                <div
+                                    class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                                    <h5 class="fw-bold mb-0">Public Profile</h5>
+                                    <span class="badge bg-primary rounded-pill">Visible to Readers</span>
                                 </div>
                                 <div class="card-body p-4">
-                                    <div class="text-center mb-4">
-                                        <div class="avatar-big mx-auto mb-3">
-                                            <i class="bi bi-person-circle display-4 text-primary"></i>
+                                    <form action="/admin/update-profile" method="POST" enctype="multipart/form-data">
+                                        <div class="text-center mb-4">
+                                            <div class="position-relative d-inline-block">
+                                                <% if (admin.profileImage) { %>
+                                                    <img src="<%= admin.profileImage %>"
+                                                        class="rounded-circle border border-4 border-light shadow-sm mb-3"
+                                                        width="120" height="120" style="object-fit: cover;">
+                                                    <% } else { %>
+                                                        <div class="rounded-circle bg-primary/10 d-flex align-items-center justify-content-center border border-4 border-light shadow-sm mb-3 mx-auto"
+                                                            style="width: 120px; height: 120px;">
+                                                            <i class="bi bi-person-fill display-4 text-primary"></i>
+                                                        </div>
+                                                        <% } %>
+                                                            <label for="profileImage"
+                                                                class="btn btn-sm btn-dark position-absolute bottom-0 end-0 rounded-circle p-2 shadow"
+                                                                style="transform: translate(-10%, -30%);">
+                                                                <i class="bi bi-camera-fill"></i>
+                                                                <input type="file" name="profileImage" id="profileImage"
+                                                                    class="d-none" onchange="this.form.submit()">
+                                                            </label>
+                                            </div>
+                                            <p class="text-muted smaller mt-2">Click the camera icon to update photo</p>
                                         </div>
-                                        <h5 class="fw-bold mb-1">Administrator</h5>
-                                        <p class="text-muted small">
-                                            <%= admin.email %>
-                                        </p>
-                                    </div>
 
-                                    <div class="list-group list-group-flush border-top">
-                                        <div class="list-group-item px-0 py-3 bg-transparent border-bottom">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <div class="small fw-bold text-muted text-uppercase mb-1">Role</div>
-                                                    <div class="fw-semibold">System Super Admin</div>
-                                                </div>
-                                                <span class="badge bg-primary rounded-pill">Active</span>
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-bold text-muted text-uppercase">Display
+                                                Name</label>
+                                            <input type="text" name="name" class="form-control"
+                                                value="<%= admin.name %>" required>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-bold text-muted text-uppercase">Public
+                                                Bio</label>
+                                            <textarea name="bio" class="form-control" rows="4"
+                                                placeholder="Share a brief introduction about yourself..."><%= admin.bio %></textarea>
+                                        </div>
+
+                                        <div class="row g-3">
+                                            <div class="col-6">
+                                                <label
+                                                    class="form-label small fw-bold text-muted text-uppercase">Twitter</label>
+                                                <input type="text" name="twitter" class="form-control"
+                                                    value="<%= admin.socialLinks?.twitter %>" placeholder="@username">
+                                            </div>
+                                            <div class="col-6">
+                                                <label
+                                                    class="form-label small fw-bold text-muted text-uppercase">Instagram</label>
+                                                <input type="text" name="instagram" class="form-control"
+                                                    value="<%= admin.socialLinks?.instagram %>" placeholder="username">
                                             </div>
                                         </div>
-                                        <div class="list-group-item px-0 py-3 bg-transparent border-bottom">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <div class="small fw-bold text-muted text-uppercase mb-1">Last
-                                                        Password Change</div>
-                                                    <div class="fw-semibold text-muted font-monospace">
-                                                        <%= admin.passwordChangedAt ? new
-                                                            Date(admin.passwordChangedAt).toLocaleString() : 'Never' %>
-                                                    </div>
-                                                </div>
-                                                <i class="bi bi-clock-history text-muted"></i>
-                                            </div>
+
+                                        <div class="d-grid mt-4">
+                                            <button type="submit" class="btn btn-secondary py-2 fw-bold rounded-3">
+                                                Save Profile Details
+                                            </button>
                                         </div>
-                                        <div class="list-group-item px-0 py-3 bg-transparent border-0">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <div class="small fw-bold text-muted text-uppercase mb-1">Member
-                                                        Since</div>
-                                                    <div class="fw-semibold text-muted">
-                                                        <%= new Date(admin.createdAt).toLocaleDateString() %>
-                                                    </div>
-                                                </div>
-                                                <i class="bi bi-calendar-event text-muted"></i>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    </form>
                                 </div>
                             </div>
                         </div>

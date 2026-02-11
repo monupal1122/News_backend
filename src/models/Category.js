@@ -18,11 +18,16 @@ const categorySchema = new mongoose.Schema({
     description: {
         type: String,
         trim: true
+    },
+    status: {
+        type: String,
+        enum: ['active', 'inactive'],
+        default: 'active'
     }
 }, { timestamps: true });
 
 // Pre-save hook to generate slug
-categorySchema.pre('save', async function() {
+categorySchema.pre('save', async function () {
     if (this.isModified('name') || this.isNew) {
         const baseSlug = generateSlug(this.name);
         this.slug = await ensureUniqueSlug(baseSlug, this.constructor, this.isNew ? null : this._id);

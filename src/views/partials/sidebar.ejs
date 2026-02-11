@@ -1,63 +1,96 @@
-<nav class="sidebar d-none d-lg-block">
-    <div class="sidebar-header">
-        <h4 class="mb-0 text-white fw-bold">
-            <i class="bi bi-newspaper me-2 text-primary"></i>News Hub
-        </h4>
-        <small class="text-white">Admin Panel v1.0</small>
+<nav class="sidebar">
+    <div class="sidebar-brand d-flex align-items-center gap-2">
+        <div class="rounded-3 bg-indigo-500 d-flex align-items-center justify-content-center text-white"
+            style="width: 32px; height: 32px; background: linear-gradient(135deg, #4f46e5, #7c3aed);">
+            <i class="bi bi-newspaper"></i>
+        </div>
+        <div>
+            <div class="lh-1">Daily Chronicle</div>
+            <small class="opacity-50 fw-normal" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                <%= admin.role==='admin' ? 'ADMIN PANEL' : 'AUTHOR PORTAL' %>
+            </small>
+        </div>
     </div>
 
-    <div class="pt-2">
+    <div class="py-2">
         <ul class="nav flex-column gap-1">
             <li class="nav-item">
                 <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'dashboard' ? 'active' : '' %>"
-                    href="/admin/dashboard">
-                    <i class="bi bi-grid-1x2-fill me-2"></i> Dashboard
+                    href="<%= admin.role === 'admin' ? '/admin/dashboard' : '/author/dashboard' %>">
+                    <i class="bi bi-grid-1x2"></i> Dashboard
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'articles' ? 'active' : '' %>"
-                    href="/admin/articles">
-                    <i class="bi bi-file-earmark-richtext-fill me-2"></i> Articles
+                    href="<%= admin.role === 'admin' ? '/admin/articles' : '/author/articles' %>">
+                    <i class="bi bi-file-earmark-richtext"></i> Articles
                 </a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'create' ? 'active' : '' %>"
-                    href="/admin/articles/create">
-                    <i class="bi bi-plus-square-fill me-2"></i> Create New
-                </a>
-            </li>
-            <div class="px-4 py-2">
-                <small class="text-white text-uppercase fw-bold"
-                    style="font-size: 0.65rem; letter-spacing: 0.05rem;">Organization</small>
-            </div>
-            <li class="nav-item">
-                <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'categories' ? 'active' : '' %>"
-                    href="/admin/categories">
-                    <i class="bi bi-tags-fill me-2"></i> Categories
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'subcategories' ? 'active' : '' %>"
-                    href="/admin/subcategories">
-                    <i class="bi bi-collection-fill me-2"></i> Subcategories
-                </a>
-            </li>
-            <div class="px-4 py-2 mt-2">
-                <small class="text-white text-uppercase fw-bold"
-                    style="font-size: 0.65rem; letter-spacing: 0.05rem;">Personal</small>
-            </div>
-            <li class="nav-item">
-                <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'account' ? 'active' : '' %>"
-                    href="/admin/account">
-                    <i class="bi bi-person-fill-gear me-2"></i> Account
-                </a>
-            </li>
-            <li class="nav-item mt-2">
-                <a class="nav-link text-danger-emphasis fw-semibold bg-danger bg-opacity-10 m-3 rounded-2"
-                    href="/admin/logout">
-                    <i class="bi bi-box-arrow-right me-2"></i> Logout
-                </a>
-            </li>
+            <% if (admin.role==='author' ) { %>
+                <li class="nav-item">
+                    <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'create' ? 'active' : '' %>"
+                        href="/author/articles/create">
+                        <i class="bi bi-plus-square"></i> Create New
+                    </a>
+                </li>
+                <% } %>
+
+                    <li class="px-4 mt-4 mb-2">
+                        <small class="text-uppercase fw-bold"
+                            style="font-size: 0.7rem; letter-spacing: 0.1em; color: #475569;">
+                            <%= admin.role==='admin' ? 'Management' : 'Content' %>
+                        </small>
+                    </li>
+
+                    <% if (admin.role==='admin' ) { %>
+                        <li class="nav-item">
+                            <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'categories' ? 'active' : '' %>"
+                                href="/admin/categories">
+                                <i class="bi bi-tags"></i> Categories
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'subcategories' ? 'active' : '' %>"
+                                href="/admin/subcategories">
+                                <i class="bi bi-collection"></i> Subcategories
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'authors' ? 'active' : '' %>"
+                                href="<%= admin.role === 'admin' ? '/admin/authors' : '/author/authors' %>">
+                                <i class="bi bi-people"></i> Authors
+                            </a>
+                        </li>
+                        <% } else { %>
+                            <li class="nav-item">
+                                <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'authors' ? 'active' : '' %>"
+                                    href="/author/authors">
+                                    <i class="bi bi-people"></i> Authors
+                                </a>
+                            </li>
+                            <% } %>
+
+                                <li class="px-4 mt-4 mb-2">
+                                    <small class="text-uppercase fw-bold"
+                                        style="font-size: 0.7rem; letter-spacing: 0.1em; color: #475569;">Settings</small>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'account' ? 'active' : '' %>"
+                                        href="<%= admin.role === 'admin' ? '/admin/account' : '/author/account' %>">
+                                        <i class="bi bi-gear"></i> Account
+                                    </a>
+                                </li>
         </ul>
+    </div>
+
+    <div class="mt-auto p-3">
+        <% const logoutLink=admin.role==='admin' ? '/admin/logout' : '/author/logout' ; %>
+            <a class="nav-link d-flex align-items-center justify-content-center gap-2 p-3 rounded-3"
+                href="<%= logoutLink %>"
+                style="background: rgba(239, 68, 68, 0.1); color: #ef4444; transition: all 0.2s;">
+                <i class="bi bi-box-arrow-right"></i>
+                <span class="fw-semibold">Sign Out</span>
+            </a>
     </div>
 </nav>

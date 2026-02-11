@@ -21,35 +21,41 @@ const validateSeoSlug = async (req, res, next) => {
         const slug = slugId.substring(0, lastDashIndex);
         const articleId = slugId.substring(lastDashIndex + 1);
 
-        // Validate articleId format
-        if (!articleId.match(/^[0-9a-fA-F]{24}$/)) {
+        // Validate articleId format (Numeric publicId)
+        if (!articleId.match(/^\d+$/)) {
             return res.status(400).json({ message: 'Invalid article ID' });
         }
 
-        // Fetch article with populated category and subcategory
-        const article = await Article.findById(articleId).populate('category subcategory');
+        // Fetch article with populated category and subcategories
+        const article = await Article.findOne({ publicId: articleId }).populate('category subcategories');
         if (!article) {
             return res.status(404).json({ message: 'Article not found' });
         }
 
+        // Get the valid subcategory from the array that matches the URL, or default to the first one
+        const matchedSubcategory = article.subcategories.find(s => s.slug === subcategorySlug);
+        const primarySubcategory = matchedSubcategory || article.subcategories[0];
+
+        // If no subcategory is found (edge case), use a placeholder or handle error
+        // But schema requires at least one subcategory
+        const canonicalSubcategorySlug = primarySubcategory ? primarySubcategory.slug : 'general';
+
         // Check if category slug matches
         if (article.category.slug !== categorySlug) {
-            // Redirect to correct URL
-            const correctUrl = `/${article.category.slug}/${article.subcategory.slug}/${article.slug}-${article._id}`;
+            const correctUrl = `/${article.category.slug}/${canonicalSubcategorySlug}/${article.slug}-${article.publicId}`;
             return res.redirect(301, correctUrl);
         }
 
-        // Check if subcategory slug matches
-        if (article.subcategory.slug !== subcategorySlug) {
-            // Redirect to correct URL
-            const correctUrl = `/${article.category.slug}/${article.subcategory.slug}/${article.slug}-${article._id}`;
+        // Check if subcategory slug matches any of the valid subcategories
+        // If the URL subcategory is NOT in the article's subcategories, redirect to the primary one
+        if (!matchedSubcategory) {
+            const correctUrl = `/${article.category.slug}/${canonicalSubcategorySlug}/${article.slug}-${article.publicId}`;
             return res.redirect(301, correctUrl);
         }
 
         // Check if slug matches
         if (article.slug !== slug) {
-            // Redirect to correct URL
-            const correctUrl = `/${article.category.slug}/${article.subcategory.slug}/${article.slug}-${article._id}`;
+            const correctUrl = `/${article.category.slug}/${canonicalSubcategorySlug}/${article.slug}-${article.publicId}`;
             return res.redirect(301, correctUrl);
         }
 
