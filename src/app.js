@@ -11,16 +11,21 @@ const passport = require('./config/passport');
 const flash = require('connect-flash');
 
 const app = express();
-app.use(cors());
+
 // Set View Engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // Middlewares
+app.use(cors({
+    origin: ['http://localhost:8081', 'https://admin.korsimnaturals.com'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+}));
 app.use(helmet({
     contentSecurityPolicy: false, // For EJS and external images
 }));
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
