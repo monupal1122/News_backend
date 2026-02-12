@@ -19,6 +19,7 @@ const startServer = async () => {
         const adminExists = await Admin.findOne({ email: process.env.ADMIN_EMAIL });
         if (!adminExists) {
             await Admin.create({
+                name: 'System Admin',
                 email: process.env.ADMIN_EMAIL,
                 password: process.env.ADMIN_PASSWORD,
                 role: 'admin'
