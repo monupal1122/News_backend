@@ -26,6 +26,12 @@ app.use(cors({
 app.use(helmet({
     contentSecurityPolicy: false, // For EJS and external images
 }));
+
+// Health Check Route (for debugging 503)
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'OK', message: 'Server is running' });
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
