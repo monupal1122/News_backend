@@ -1,16 +1,27 @@
 
 require('dotenv').config();
 const app = require('./src/app');
+console.log('App starting...');
 const connectDB = require('./src/config/db');
+console.log('DB module loaded');
 const { connectRedis } = require('./src/config/redis');
+console.log('Redis module loaded');
 const Admin = require('./src/models/Admin');
+console.log('Models loaded');
 
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
+    console.log(`Starting server on port ${PORT}...`);
     // 1. Start listening immediately (Prevents 503)
-    app.listen(PORT, () => {
-        console.log(`Server is booting in ${process.env.NODE_ENV} mode on port ${PORT}...`);
+    const server = app.listen(PORT, '0.0.0.0', () => {
+        console.log(`=========================================`);
+        console.log(`SERVER IS LIVE ON PORT ${PORT}`);
+        console.log(`=========================================`);
+    });
+
+    server.on('error', (err) => {
+        console.error('Server failed to start:', err);
     });
 
     try {
