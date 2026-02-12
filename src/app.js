@@ -11,7 +11,7 @@ const passport = require('./config/passport');
 const flash = require('connect-flash');
 
 const app = express();
-
+app.use(cors());
 // Set View Engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -20,7 +20,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(helmet({
     contentSecurityPolicy: false, // For EJS and external images
 }));
-app.use(cors());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
