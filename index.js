@@ -8,14 +8,19 @@ const Admin = require('./src/models/Admin');
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
+    // 1. Start listening immediately (Prevents 503)
+    app.listen(PORT, () => {
+        console.log(`Server is booting in ${process.env.NODE_ENV} mode on port ${PORT}...`);
+    });
+
     try {
-        // Connect to Database
+        // 2. Connect to Database (Non-blocking)
         await connectDB();
 
-        // Connect to Redis (non-blocking)
+        // 3. Connect to Redis (non-blocking)
         connectRedis();
 
-        // Seed Admin if not exists
+        // 4. Seed Admin if not exists
         const adminExists = await Admin.findOne({ email: process.env.ADMIN_EMAIL });
         if (!adminExists) {
             await Admin.create({
@@ -26,13 +31,8 @@ const startServer = async () => {
             });
             console.log('Admin user seeded successfully');
         }
-
-        app.listen(PORT, () => {
-            console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-        });
     } catch (error) {
-        console.error(`Error starting server: ${error.message}`);
-        process.exit(1);
+        console.error(`Post-startup error: ${error.message}`);
     }
 };
 
