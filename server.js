@@ -28,7 +28,14 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 const app = express();
-const PORT = parseInt(process.env.PORT, 10) || 5000;
+// USE THE PORT HOSTINGER GIVES US, OR FALLBACK TO 5000
+const PORT = process.env.PORT || 5000;
+
+console.log('--- SYSTEM STACK ---');
+console.log(`Node Version: ${process.version}`);
+console.log(`Port Assigned: ${PORT}`);
+console.log(`Environment: ${process.env.NODE_ENV}`);
+console.log('--------------------');
 
 // 1. Set View Engine (Adjusted path for root)
 app.set('view engine', 'ejs');
@@ -102,14 +109,9 @@ app.use((err, req, res, next) => {
 
 // 7. Server Startup
 const startServer = async () => {
-    console.log(`Node Version: ${process.version}`);
-
     // Start listening immediately (Prevents Hostinger 503)
     app.listen(PORT, () => {
-        console.log(``);
-        console.log(`SERVER IS LIVE ON PORT ${PORT}`);
-        console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
-        console.log(``);
+        console.log(`>>> SERVER BOOTED SUCCESS ON PORT: ${PORT} <<<`);
     });
 
     try {
