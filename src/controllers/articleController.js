@@ -29,7 +29,7 @@ exports.getArticles = async (req, res) => {
         const total = await Article.countDocuments();
         const articles = await Article.find()
             .populate('category subcategories author')
-            .sort({ publishedAt: -1 })
+            .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
 
@@ -74,7 +74,7 @@ exports.getFeaturedArticles = async (req, res) => {
 
         const articles = await Article.find({ isFeatured: true })
             .populate('category subcategories author')
-            .sort({ publishedAt: -1 })
+            .sort({ createdAt: -1 })
             .limit(5);
 
         try {
@@ -127,7 +127,7 @@ exports.getArticlesByCategory = async (req, res) => {
 
         const articles = await Article.find(query)
             .populate('category subcategories author')
-            .sort({ publishedAt: -1 })
+            .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
 
@@ -164,7 +164,7 @@ exports.getArticlesBySubcategory = async (req, res) => {
 
         const articles = await Article.find(query)
             .populate('category subcategories author')
-            .sort({ publishedAt: -1 })
+            .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
 
@@ -257,7 +257,7 @@ exports.searchArticles = async (req, res) => {
                 ]
             })
                 .populate('category subcategories author')
-                .sort({ publishedAt: -1 })
+                .sort({ createdAt: -1 })
                 .limit(20);
         }
 
@@ -453,7 +453,7 @@ exports.getArticlesBySubcategory = async (req, res) => {
 
         const articles = await Article.find({ subcategories: subcategoryDoc._id })
             .populate('category subcategories author')
-            .sort({ publishedAt: -1 })
+            .sort({ createdAt: -1 })
             .limit(limit);
 
         res.status(200).json(articles);
@@ -471,7 +471,7 @@ exports.getArticlesByTag = async (req, res) => {
 
         const articles = await Article.find({ tags: tag })
             .populate('category subcategories author')
-            .sort({ publishedAt: -1 })
+            .sort({ createdAt: -1 })
             .limit(limit);
 
         res.status(200).json(articles);

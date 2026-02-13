@@ -43,8 +43,33 @@
                                                         class="form-label fw-bold text-muted small text-uppercase">Headline</label>
                                                     <input type="text"
                                                         class="form-control form-control-lg border-0 bg-light rounded-3"
-                                                        name="title" value="<%= article ? article.title : '' %>"
+                                                        name="title" id="titleInput"
+                                                        value="<%= article ? article.title : '' %>"
                                                         placeholder="Enter a catchy title..." required>
+                                                </div>
+
+                                                <div class="mb-4">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <label
+                                                            class="form-label fw-bold text-muted small text-uppercase mb-0">URL
+                                                            Slug (SEO Friendly)</label>
+                                                        <button type="button" id="generateSlugBtn"
+                                                            class="btn btn-sm btn-outline-secondary border-0 text-[10px] font-black uppercase tracking-widest p-0">
+                                                            <i class="bi bi-link-45deg me-1 text-primary"></i> Auto
+                                                            Generate Slug
+                                                        </button>
+                                                    </div>
+                                                    <div class="input-group">
+                                                        <span
+                                                            class="input-group-text border-0 bg-light text-muted small font-monospace">/</span>
+                                                        <input type="text"
+                                                            class="form-control border-0 bg-light rounded-end-3"
+                                                            name="slug" id="slugInput"
+                                                            value="<%= article ? article.slug : '' %>"
+                                                            placeholder="my-meaningful-slug">
+                                                    </div>
+                                                    <p class="text-[10px] text-muted mt-2 ps-1">Lower-case keywords,
+                                                        hyphens only. Example: news-story-title</p>
                                                 </div>
 
                                                 <div class="mb-4">
@@ -57,13 +82,23 @@
                                                 </div>
 
                                                 <div class="mb-4">
-                                                    <label
-                                                        class="form-label fw-bold text-muted small text-uppercase">Tags
-                                                        (Comma separated)</label>
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <label
+                                                            class="form-label fw-bold text-muted small text-uppercase mb-0">Tags
+                                                            (Comma separated)</label>
+                                                        <button type="button" id="suggestTagsBtn"
+                                                            class="btn btn-sm btn-outline-secondary border-0 text-[10px] font-black uppercase tracking-widest p-0">
+                                                            <i class="bi bi-stars me-1 text-warning"></i> Suggest AI
+                                                            Tags
+                                                        </button>
+                                                    </div>
                                                     <input type="text" class="form-control border-0 bg-light rounded-3"
-                                                        name="tags"
+                                                        name="tags" id="tagsInput"
                                                         value="<%= article && article.tags ? (Array.isArray(article.tags) ? article.tags.join(', ') : article.tags) : '' %>"
                                                         placeholder="e.g. tech, future, ai">
+                                                    <div id="tagsLoader"
+                                                        class="spinner-border spinner-border-sm text-secondary d-none mt-2"
+                                                        role="status"></div>
                                                 </div>
 
                                                 <div class="mb-3">
@@ -275,6 +310,83 @@
                     });
                 } catch (error) {
                     console.error('Error fetching subcategories:', error);
+                }
+            });
+
+            // AI Tag Suggestion Logic
+            const suggestTagsBtn = document.querySelector('#suggestTagsBtn');
+            const tagsInput = document.querySelector('#tagsInput');
+            const tagsLoader = document.querySelector('#tagsLoader');
+            const titleInput = document.querySelector('input[name="title"]');
+            const summaryInput = document.querySelector('textarea[name="summary"]');
+
+            suggestTagsBtn.addEventListener('click', async () => {
+                const title = titleInput.value;
+                const summary = summaryInput.value;
+
+                if (!title) {
+                    alert('Please enter a title first to get suggestions.');
+                    return;
+                }
+
+                suggestTagsBtn.disabled = true;
+                tagsLoader.classList.remove('d-none');
+
+                try {
+                    const response = await fetch('/admin/articles/suggest-tags', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title, summary })
+                    });
+                    const data = await response.json();
+
+                    if (data.tags && data.tags.length > 0) {
+                        const existingTags = tagsInput.value ? tagsInput.value.split(',').map(t => t.trim()) : [];
+                        const newTags = [...new Set([...existingTags, ...data.tags])].filter(Boolean);
+                        tagsInput.value = newTags.join(', ');
+                    } else {
+                        alert('No suggestions found. Try adding more detail to the title.');
+                    }
+                } catch (error) {
+                    console.error('Error suggesting tags:', error);
+                    alert('Failed to get suggestions. Please try again.');
+                } finally {
+                    suggestTagsBtn.disabled = false;
+                    tagsLoader.classList.add('d-none');
+                }
+            });
+
+            // Auto Generate Slug Logic
+            const generateSlugBtn = document.querySelector('#generateSlugBtn');
+            const slugInput = document.querySelector('#slugInput');
+
+            generateSlugBtn.addEventListener('click', async () => {
+                const title = titleInput.value;
+                if (!title) {
+                    alert('Please enter a headline first to generate a slug.');
+                    return;
+                }
+
+                generateSlugBtn.disabled = true;
+                const originalContent = generateSlugBtn.innerHTML;
+                generateSlugBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-1"></i> Generating...';
+
+                try {
+                    const response = await fetch('/admin/articles/generate-slug', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title })
+                    });
+                    const data = await response.json();
+
+                    if (data.slug) {
+                        slugInput.value = data.slug;
+                    }
+                } catch (error) {
+                    console.error('Error generating slug:', error);
+                } finally {
+                    generateSlugBtn.disabled = false;
+                    generateSlugBtn.innerHTML = originalContent;
                 }
             });
         </script>

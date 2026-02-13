@@ -99,6 +99,10 @@ router.put('/authors/:id', restrictTo('admin'), adminController.updateAuthor);
 router.delete('/authors/:id', restrictTo('admin'), adminController.deleteAuthor);
 router.get('/authors/:id/articles', restrictTo('admin'), adminController.getArticlesByAuthor);
 
+// AI Helpers
+router.post('/articles/suggest-tags', adminController.suggestTags);
+router.post('/articles/generate-slug', adminController.generateSlugAPI);
+
 // Article CRUD (called via AJAX or form submission)
 router.post('/articles', upload.single('image'), articleController.createArticle);
 router.post('/articles/:id', upload.single('image'), articleController.updateArticle);

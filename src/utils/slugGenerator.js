@@ -30,7 +30,7 @@ function generateSlug(text, maxWords = 12) {
 
   // Replace punctuation/symbols with space to avoid word concatenation
   const words = clean
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .replace(/[^\p{L}\p{N}\p{M}]+/gu, " ")
     .trim()
     .split(/\s+/)
     .filter(Boolean);

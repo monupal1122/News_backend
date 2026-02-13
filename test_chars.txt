@@ -1,0 +1,4 @@
+अ L:true M:false
+प L:true M:false
+न L:true M:false
+ा L:false M:true

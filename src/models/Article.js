@@ -98,7 +98,11 @@ articleSchema.index({ title: 'text', description: 'text', content: 'text' });
 articleSchema.pre('validate', async function () {
     try {
         // Handle Slug
-        if (this.isModified('title') || !this.slug) {
+        if (this.isModified('slug') && this.slug) {
+            // User manually provided a slug, just ensure it's unique
+            this.slug = await ensureUniqueSlug(this.slug, this.constructor, this.isNew ? null : this._id);
+        } else if (this.isModified('title') || !this.slug) {
+            // No manual slug edit, or it's a new article, generate from title
             const baseSlug = generateSlug(this.title || 'untitled');
             this.slug = await ensureUniqueSlug(baseSlug, this.constructor, this.isNew ? null : this._id);
         }

@@ -2,6 +2,7 @@ const Article = require('../models/Article');
 const Category = require('../models/Category');
 const Subcategory = require('../models/Subcategory');
 const Admin = require('../models/Admin');
+const { generateSlug } = require('../utils/slugGenerator');
 
 exports.getDashboard = async (req, res) => {
     try {
@@ -314,5 +315,55 @@ exports.getArticlesByAuthor = async (req, res) => {
         });
     } catch (error) {
         res.status(500).send('Server Error');
+    }
+};
+
+exports.suggestTags = async (req, res) => {
+    try {
+        const { title, summary } = req.body;
+        if (!title) return res.status(400).json({ tags: [] });
+
+        const combinedText = `${title} ${summary || ''}`;
+
+        // 1. English Proper Nouns (Capitalized words in middle of sentence or anywhere)
+        // This picks up names like "Rajpal Yadav", "Delhi High Court"
+        const properNouns = combinedText.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b/g) || [];
+
+        // 2. Hindi word extraction (simplified - picking words longer than 2 chars)
+        const hindiWords = combinedText.match(/[\u0900-\u097F]{3,}/g) || [];
+
+        // 3. Technical/Common News Terms
+        const commonTerms = ["Politics", "Breaking News", "Bollywood", "Entertainment", "India", "World", "Sports", "Tech"];
+        const foundTerms = commonTerms.filter(term =>
+            combinedText.toLowerCase().includes(term.toLowerCase())
+        );
+
+        // Combine and cleanup
+        let allTags = [...new Set([...properNouns, ...hindiWords, ...foundTerms])];
+
+        // Filter out common stop words if needed, but the current regex is selective
+        const stopWords = ["The", "And", "For", "This", "That", "When", "With"];
+        allTags = allTags.filter(tag => !stopWords.includes(tag) && tag.length > 2);
+
+        // Limit to 8 most relevant-looking tags
+        const suggestedTags = allTags.slice(0, 8);
+
+        res.json({ tags: suggestedTags });
+    } catch (error) {
+        console.error('Tag Suggestion Error:', error);
+        res.status(500).json({ tags: [] });
+    }
+};
+
+exports.generateSlugAPI = async (req, res) => {
+    try {
+        const { title } = req.body;
+        if (!title) return res.status(400).json({ slug: '' });
+
+        const slug = generateSlug(title);
+        res.json({ slug });
+    } catch (error) {
+        console.error('Slug Generation Error:', error);
+        res.status(500).json({ slug: '' });
     }
 };
