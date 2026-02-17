@@ -26,6 +26,12 @@
                     <i class="bi bi-file-earmark-richtext"></i> Articles
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'ads' ? 'active' : '' %>"
+                    href="<%= admin.role === 'admin' ? '/admin/ads' : '/author/ads' %>">
+                    <i class="bi bi-megaphone"></i> Advertising
+                </a>
+            </li>
             <% if (admin.role==='author' ) { %>
                 <li class="nav-item">
                     <a class="nav-link <%= typeof activePage !== 'undefined' && activePage === 'create' ? 'active' : '' %>"

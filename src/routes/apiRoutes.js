@@ -39,4 +39,8 @@ router.get('/categories/:categoryId/subcategories', categoryController.getSubcat
 router.put('/subcategories/:id', categoryController.updateSubcategory);
 router.delete('/subcategories/:id', categoryController.deleteSubcategory);
 
+// Ads Routes
+const adsRoutes = require('./adsroute');
+router.use('/ads', adsRoutes);
+
 module.exports = router;

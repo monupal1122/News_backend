@@ -1,0 +1,209 @@
+<% const activePage='ads' ; %>
+    <%- include('../partials/header') %>
+
+        <div class="container-fluid p-0">
+            <%- include('../partials/sidebar', { activePage }) %>
+
+                <main>
+                    <header class="main-header mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h1 class="h3 fw-bold mb-0">
+                                    <%= mode==='create' ? 'Create New Ad' : 'Edit Ad' %>
+                                </h1>
+                                <p class="text-muted small mb-0">Configure advertisement details and placement</p>
+                            </div>
+                            <a href="<%= admin.role === 'admin' ? '/admin/ads' : '/author/ads' %>"
+                                class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Back to List
+                            </a>
+                        </div>
+                    </header>
+
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8">
+                            <div class="card border-0 shadow-sm rounded-4">
+                                <div class="card-body p-4">
+                                    <form
+                                        action="<%= mode === 'create' ? (admin.role === 'admin' ? '/admin/ads' : '/author/ads') : (admin.role === 'admin' ? '/admin/ads/' + ad._id : '/author/ads/' + ad._id) %>"
+                                        method="POST" enctype="multipart/form-data">
+
+                                        <div class="mb-4">
+                                            <label class="form-label fw-bold">Ad Title</label>
+                                            <input type="text" name="title" class="form-control" required
+                                                placeholder="Enter ad title (internal use)"
+                                                value="<%= mode === 'edit' ? ad.title : '' %>">
+                                        </div>
+
+                                        <div class="row mb-4">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold">Placement</label>
+                                                <select name="placement" class="form-select" required>
+                                                    <option value="hero" <%=mode==='edit' && ad.placement==='hero'
+                                                        ? 'selected' : '' %>>Hero Slider</option>
+                                                    <option value="header" <%=mode==='edit' && ad.placement==='header'
+                                                        ? 'selected' : '' %>>Top Header</option>
+                                                    <option value="sidebar" <%=mode==='edit' && ad.placement==='sidebar'
+                                                        ? 'selected' : '' %>>Sidebar Widget</option>
+                                                    <option value="inline" <%=mode==='edit' && ad.placement==='inline'
+                                                        ? 'selected' : '' %>>In-Article Body</option>
+                                                    <option value="footer" <%=mode==='edit' && ad.placement==='footer'
+                                                        ? 'selected' : '' %>>Footer Banner</option>
+                                                    <option value="popup" <%=mode==='edit' && ad.placement==='popup'
+                                                        ? 'selected' : '' %>>Pop-up Overlay</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold">Status</label>
+                                                <select name="status" class="form-select">
+                                                    <option value="active" <%=mode==='edit' && ad.status==='active'
+                                                        ? 'selected' : '' %>>Active (Visible)</option>
+                                                    <option value="paused" <%=mode==='edit' && ad.status==='paused'
+                                                        ? 'selected' : '' %>>Paused (Hidden)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-4">
+                                            <label class="form-label fw-bold">Redirect URL</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="bi bi-link"></i></span>
+                                                <input type="url" name="redirectUrl" class="form-control" required
+                                                    placeholder="https://example.com/promo"
+                                                    value="<%= mode === 'edit' ? ad.redirectUrl : '' %>">
+                                            </div>
+                                            <small class="text-muted">Where users will be taken when they click the
+                                                ad</small>
+                                        </div>
+
+                                        <div class="row mb-4">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold">Width (px)</label>
+                                                <input type="number" id="widthInput" name="width" class="form-control"
+                                                    placeholder="e.g. 300"
+                                                    value="<%= mode === 'edit' ? ad.width : '' %>">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold">Height (px)</label>
+                                                <input type="number" id="heightInput" name="height" class="form-control"
+                                                    placeholder="e.g. 250"
+                                                    value="<%= mode === 'edit' ? ad.height : '' %>">
+                                            </div>
+                                            <div class="col-12 mt-2">
+                                                <small class="text-muted d-block mb-1">Standard Shapes:</small>
+                                                <div class="d-flex gap-2 flex-wrap">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        onclick="setSize(300, 250)">Medium Rectangle (300x250)</button>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        onclick="setSize(336, 280)">Large Rectangle (336x280)</button>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        onclick="setSize(250, 250)">Square (250x250)</button>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        onclick="setSize(200, 200)">Small Square (200x200)</button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <script>
+                                            function setSize(w, h) {
+                                                document.getElementById('widthInput').value = w;
+                                                document.getElementById('heightInput').value = h;
+                                            }
+                                        </script>
+
+                                        <div class="mb-4">
+                                            <label class="form-label fw-bold">Ad Banner Image</label>
+                                            <div class="drop-zone border rounded-3 p-4 text-center mb-2" id="dropZone">
+                                                <i class="bi bi-cloud-arrow-up fs-2 text-muted mb-2"></i>
+                                                <p class="small text-muted mb-0">Drag & drop image or click to browse
+                                                </p>
+                                                <input type="file" name="image" id="imageInput" class="d-none"
+                                                    accept="image/*" <%=mode==='create' ? 'required' : '' %>>
+                                            </div>
+                                            <div id="imagePreview" class="mt-2 <%= mode === 'edit' ? '' : 'd-none' %>">
+                                                <img src="<%= mode === 'edit' ? ad.imageUrl : '' %>"
+                                                    class="img-fluid rounded-3 border shadow-sm"
+                                                    style="max-height: 200px;">
+                                            </div>
+                                        </div>
+
+                                        <div class="row mb-4">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold">Priority (Optional)</label>
+                                                <input type="number" name="priority" class="form-control"
+                                                    placeholder="1" min="1" max="10"
+                                                    value="<%= mode === 'edit' ? ad.priority : 1 %>">
+                                            </div>
+                                        </div>
+
+                                        <div class="d-grid">
+                                            <button type="submit" class="btn btn-primary py-2 fw-bold">
+                                                <i class="bi bi-check-circle me-2"></i>
+                                                <%= mode==='create' ? 'Create Advertisement' : 'Save Changes' %>
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+        </div>
+
+        <style>
+            .drop-zone {
+                cursor: pointer;
+                transition: all 0.2s;
+                border-style: dashed !important;
+            }
+
+            .drop-zone:hover {
+                background-color: #f8fafc;
+                border-color: #4f46e5 !important;
+            }
+        </style>
+
+        <script>
+            const dropZone = document.getElementById('dropZone');
+            const imageInput = document.getElementById('imageInput');
+            const imagePreview = document.getElementById('imagePreview');
+
+            dropZone.addEventListener('click', () => imageInput.click());
+
+            imageInput.addEventListener('change', function () {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        imagePreview.querySelector('img').src = e.target.result;
+                        imagePreview.classList.remove('d-none');
+                    }
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+
+            // Drag and drop handling
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.style.backgroundColor = '#f1f5f9';
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.style.backgroundColor = '';
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.style.backgroundColor = '';
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    imageInput.files = e.dataTransfer.files;
+                    const reader = new FileReader();
+                    reader.onload = function (event) {
+                        imagePreview.querySelector('img').src = event.target.result;
+                        imagePreview.classList.remove('d-none');
+                    }
+                    reader.readAsDataURL(e.dataTransfer.files[0]);
+                }
+            });
+        </script>
+
+        <%- include('../partials/footer') %>

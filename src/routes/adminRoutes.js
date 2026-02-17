@@ -46,6 +46,15 @@ router.get('/articles', adminController.getArticles);
 router.get('/articles/create', restrictTo('author'), adminController.getCreateArticle);
 router.get('/articles/edit/:id', adminController.getEditArticle);
 
+// Ads
+const adsController = require('../controllers/adscontroller');
+router.get('/ads', adminController.getAds);
+router.get('/ads/create', adminController.getCreateAd);
+router.get('/ads/edit/:id', adminController.getEditAd);
+router.post('/ads', upload.single('image'), adsController.AdsCreate);
+router.post('/ads/:id', upload.single('image'), adsController.AdsUpdate);
+router.delete('/ads/:id', adsController.Adsdelete);
+
 // Categories (Admin Only)
 router.get('/categories', restrictTo('admin'), adminController.getCategories);
 router.post('/categories', restrictTo('admin'), async (req, res) => {

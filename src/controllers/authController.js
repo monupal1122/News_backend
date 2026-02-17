@@ -5,7 +5,7 @@ const sendEmail = require('../services/emailService');
 
 const signToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: '1d'
+        expiresIn: '2d'
     });
 };
 
@@ -258,7 +258,8 @@ exports.resetPassword = async (req, res) => {
         }
 
         req.flash('success_msg', 'Password reset successful! You are now logged in.');
-        res.redirect('/admin/dashboard');
+        const redirectPath = admin.role === 'admin' ? '/admin/dashboard' : '/author/dashboard';
+        res.redirect(redirectPath);
 
     } catch (error) {
         console.error('RESET PASSWORD ERROR:', error);

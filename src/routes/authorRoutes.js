@@ -26,6 +26,15 @@ router.get('/account', adminController.getAccount);
 router.post('/update-profile', upload.single('profileImage'), adminController.updateProfile);
 router.get('/authors', adminController.getAuthors);
 
+// Ads for Authors
+const adsController = require('../controllers/adscontroller');
+router.get('/ads', adminController.getAds);
+router.get('/ads/create', adminController.getCreateAd);
+router.get('/ads/edit/:id', adminController.getEditAd);
+router.post('/ads', upload.single('image'), adsController.AdsCreate);
+router.post('/ads/:id', upload.single('image'), adsController.AdsUpdate);
+router.delete('/ads/:id', adsController.Adsdelete);
+
 // Article CRUD for Authors
 router.post('/articles', upload.single('image'), articleController.createArticle);
 router.post('/articles/:id', upload.single('image'), articleController.updateArticle);

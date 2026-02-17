@@ -2,7 +2,49 @@ const Article = require('../models/Article');
 const Category = require('../models/Category');
 const Subcategory = require('../models/Subcategory');
 const Admin = require('../models/Admin');
+const Ad = require('../models/Ads');
 const { generateSlug } = require('../utils/slugGenerator');
+
+exports.getAds = async (req, res) => {
+    try {
+        const query = req.admin.role === 'admin' ? {} : { author: req.admin._id };
+        const ads = await Ad.find(query).sort({ createdAt: -1 });
+        res.render('admin/ads', { ads, admin: req.admin });
+    } catch (error) {
+        res.status(500).send('Server Error');
+    }
+};
+
+exports.getCreateAd = async (req, res) => {
+    res.render('admin/ad-form', {
+        mode: 'create',
+        ad: null,
+        admin: req.admin
+    });
+};
+
+exports.getEditAd = async (req, res) => {
+    try {
+        const ad = await Ad.findById(req.params.id);
+        if (!ad) {
+            const redirectUrl = req.admin.role === 'admin' ? '/admin/ads' : '/author/ads';
+            return res.redirect(redirectUrl);
+        }
+
+        // Ownership validation for authors
+        if (req.admin.role !== 'admin' && ad.author && ad.author.toString() !== req.admin._id.toString()) {
+            return res.status(403).send('Not authorized to edit this ad');
+        }
+
+        res.render('admin/ad-form', {
+            ad,
+            admin: req.admin,
+            mode: 'edit'
+        });
+    } catch (error) {
+        res.status(500).send('Server Error');
+    }
+};
 
 exports.getDashboard = async (req, res) => {
     try {
