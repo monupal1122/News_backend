@@ -40,22 +40,23 @@ const validateSeoSlug = async (req, res, next) => {
         // But schema requires at least one subcategory
         const canonicalSubcategorySlug = primarySubcategory ? primarySubcategory.slug : 'general';
 
-        // Check if category slug matches
-        if (article.category.slug !== categorySlug) {
-            const correctUrl = `/api/articles/${article.category.slug}/${canonicalSubcategorySlug}/${article.slug}-${article.publicId}`;
-            return res.redirect(301, correctUrl);
-        }
+        // Check if slugs match, redirect to correct URL if they don't
+        try {
+            const decodedSlug = decodeURIComponent(slug);
+            const canonicalSubcategorySlug = primarySubcategory ? primarySubcategory.slug : 'general';
+            const correctUrl = `/articles/${article.category.slug}/${canonicalSubcategorySlug}/${article.slug}-${article.publicId}`;
 
-        // Check if subcategory slug matches any of the valid subcategories
-        if (!matchedSubcategory) {
-            const correctUrl = `/api/articles/${article.category.slug}/${canonicalSubcategorySlug}/${article.slug}-${article.publicId}`;
-            return res.redirect(301, correctUrl);
-        }
-
-        // Check if slug matches
-        if (article.slug !== slug) {
-            const correctUrl = `/api/articles/${article.category.slug}/${canonicalSubcategorySlug}/${article.slug}-${article.publicId}`;
-            return res.redirect(301, correctUrl);
+            if (article.category.slug !== categorySlug || !matchedSubcategory || article.slug !== decodedSlug) {
+                // If it's an API request, we just continue to show the article
+                if (req.originalUrl.startsWith('/api')) {
+                    return next();
+                }
+                return res.redirect(301, correctUrl);
+            }
+        } catch (err) {
+            console.error('Decoding Error:', err);
+            // If decoding fails, just continue
+            return next();
         }
 
         // Attach article to request for controller use
