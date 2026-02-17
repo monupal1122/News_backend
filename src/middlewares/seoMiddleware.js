@@ -43,15 +43,17 @@ const validateSeoSlug = async (req, res, next) => {
         // Check if slugs match, redirect to correct URL if they don't
         try {
             const decodedSlug = decodeURIComponent(slug);
-            const canonicalSubcategorySlug = primarySubcategory ? primarySubcategory.slug : 'general';
-            const correctUrl = `/articles/${article.category.slug}/${canonicalSubcategorySlug}/${article.slug}-${article.publicId}`;
+            const correctInternalPath = `/articles/${article.category.slug}/${canonicalSubcategorySlug}/${article.slug}-${article.publicId}`;
 
             if (article.category.slug !== categorySlug || !matchedSubcategory || article.slug !== decodedSlug) {
-                // If it's an API request, we just continue to show the article
+                // If it's an API request, DON'T redirect, just let the controller serve the article
                 if (req.originalUrl.startsWith('/api')) {
+                    req.article = article;
                     return next();
                 }
-                return res.redirect(301, correctUrl);
+
+                // For direct browser visits to the API URL, we can redirect properly
+                return res.redirect(301, `/api${correctInternalPath}`);
             }
         } catch (err) {
             console.error('Decoding Error:', err);
