@@ -42,20 +42,19 @@ const validateSeoSlug = async (req, res, next) => {
 
         // Check if category slug matches
         if (article.category.slug !== categorySlug) {
-            const correctUrl = `/${article.category.slug}/${canonicalSubcategorySlug}/${article.slug}-${article.publicId}`;
+            const correctUrl = `/api/articles/${article.category.slug}/${canonicalSubcategorySlug}/${article.slug}-${article.publicId}`;
             return res.redirect(301, correctUrl);
         }
 
         // Check if subcategory slug matches any of the valid subcategories
-        // If the URL subcategory is NOT in the article's subcategories, redirect to the primary one
         if (!matchedSubcategory) {
-            const correctUrl = `/${article.category.slug}/${canonicalSubcategorySlug}/${article.slug}-${article.publicId}`;
+            const correctUrl = `/api/articles/${article.category.slug}/${canonicalSubcategorySlug}/${article.slug}-${article.publicId}`;
             return res.redirect(301, correctUrl);
         }
 
         // Check if slug matches
         if (article.slug !== slug) {
-            const correctUrl = `/${article.category.slug}/${canonicalSubcategorySlug}/${article.slug}-${article.publicId}`;
+            const correctUrl = `/api/articles/${article.category.slug}/${canonicalSubcategorySlug}/${article.slug}-${article.publicId}`;
             return res.redirect(301, correctUrl);
         }
 
