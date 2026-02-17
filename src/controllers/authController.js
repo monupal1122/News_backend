@@ -41,6 +41,10 @@ const handleLogin = async (req, res, requiredRole, loginView) => {
             });
         }
 
+        if (!process.env.JWT_SECRET) {
+            console.error('CRITICAL: JWT_SECRET is missing from environment variables!');
+        }
+
         const token = signToken(user._id);
         const cookieOptions = {
             expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
@@ -53,8 +57,8 @@ const handleLogin = async (req, res, requiredRole, loginView) => {
         const redirectPath = user.role === 'admin' ? '/admin/dashboard' : '/author/dashboard';
         res.redirect(redirectPath);
     } catch (error) {
-        console.error('LOGIN ERROR:', error);
-        res.status(500).render(loginView, { error: 'An internal error occurred. Please try again.' });
+        console.error('LOGIN ERROR DETAIL:', error);
+        res.status(500).render(loginView, { error: `Internal Error: ${error.message}` });
     }
 };
 
