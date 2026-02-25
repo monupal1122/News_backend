@@ -33,7 +33,9 @@ const adSchema = new mongoose.Schema({
       "sidebar",
       "inline",
       "footer",
-      "popup"
+      "popup",
+      "square",
+      "rectangle"
     ],
     required: true,
   },

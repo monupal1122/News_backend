@@ -7,6 +7,9 @@ const AdsCreate = async (req, res) => {
     const adData = { ...req.body };
     if (req.file) {
       adData.imageUrl = req.file.path; // Cloudinary URL
+      // Automatically save dimensions if available from Cloudinary
+      if (req.file.width) adData.width = req.file.width;
+      if (req.file.height) adData.height = req.file.height;
     }
 
     if (req.admin) {
@@ -41,6 +44,9 @@ const AdsUpdate = async (req, res) => {
     const adData = { ...req.body };
     if (req.file) {
       adData.imageUrl = req.file.path; // Cloudinary URL
+      // Automatically update dimensions if available from Cloudinary
+      if (req.file.width) adData.width = req.file.width;
+      if (req.file.height) adData.height = req.file.height;
     }
 
     const ad = await Ads.findById(req.params.id);

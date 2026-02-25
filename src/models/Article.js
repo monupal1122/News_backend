@@ -44,6 +44,12 @@ const articleSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    featuredImageWidth: {
+        type: Number
+    },
+    featuredImageHeight: {
+        type: Number
+    },
     mediaGallery: [{
         type: String
     }],
