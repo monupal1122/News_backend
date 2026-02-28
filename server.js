@@ -47,7 +47,18 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(cors());
+const cors = require("cors");
+
+app.use(
+  cors({
+    origin: [
+      "https://korsimnaturals.com",
+      "https://www.korsimnaturals.com",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 app.use(helmet({
     contentSecurityPolicy: false,
 }));
