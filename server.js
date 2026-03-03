@@ -49,8 +49,15 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'src/views'));
 
 // 2. PRERENDER MIDDLEWARE - Must be BEFORE all other middleware
-// This intercepts requests from social media bots (Facebook, Twitter, LinkedIn, etc.)
-// and returns pre-rendered HTML with all OG meta tags
+// Middleware to log User-Agents and force Prerender for known bots
+app.use((req, res, next) => {
+    const userAgent = req.headers['user-agent'] || '';
+    if (userAgent.includes('LinkedInBot') || userAgent.includes('facebookexternalhit')) {
+        console.log(`[BOT DETECTED]: ${userAgent} - Requesting: ${req.url}`);
+        req.shouldShowPrerender = true;
+    }
+    next();
+});
 app.use(prerender);
 
 // 3. Middlewares
