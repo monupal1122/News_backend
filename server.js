@@ -6,6 +6,12 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const flash = require('connect-flash');
+// PRERENDER.IO CONFIGURATION
+// Must be configured before 'app' initialization for best results
+const prerender = require('prerender-node');
+prerender.set('prerenderToken', process.env.PRERENDER_TOKEN || 'MKc29XdWcppSm65HX6n4');
+prerender.set('host', 'korsimnaturals.com');
+// prerender.set('debug', true); // Uncomment to debug if bots aren't being intercepted
 
 // Modules & Config
 const connectDB = require('./src/config/db');
@@ -35,13 +41,19 @@ console.log('--- SYSTEM STACK ---');
 console.log(`Node Version: ${process.version}`);
 console.log(`Port Assigned: ${PORT}`);
 console.log(`Environment: ${process.env.NODE_ENV}`);
+console.log(`Prerender Token: ${process.env.PRERENDER_TOKEN ? 'Configured' : 'Using default'}`);
 console.log('--------------------');
 
 // 1. Set View Engine (Adjusted path for root)
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'src/views'));
 
-// 2. Middlewares
+// 2. PRERENDER MIDDLEWARE - Must be BEFORE all other middleware
+// This intercepts requests from social media bots (Facebook, Twitter, LinkedIn, etc.)
+// and returns pre-rendered HTML with all OG meta tags
+app.use(prerender);
+
+// 3. Middlewares
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
     next();
