@@ -8,7 +8,10 @@ const session = require('express-session');
 const flash = require('connect-flash');
 // PRERENDER.IO CONFIGURATION
 // Must be configured before 'app' initialization for best results
-const Article = require('./src/models/Article');
+const prerender = require('prerender-node');
+prerender.set('prerenderToken', process.env.PRERENDER_TOKEN || 'MKc29XdWcppSm65HX6n4');
+prerender.set('host', 'korsimnaturals.com');
+// prerender.set('debug', true); // Uncomment to debug if bots aren't being intercepted
 
 // Modules & Config
 const connectDB = require('./src/config/db');
@@ -45,59 +48,17 @@ console.log('--------------------');
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'src/views'));
 
-// Helper for SEO Image URLs
-const toAbsoluteUrl = (img) => {
-    const siteUrl = "https://korsimnaturals.com";
-    const adminUrl = "https://admin.korsimnaturals.com";
-    if (!img || img.trim() === "") return `${siteUrl}/logo1.webp`;
-    if (img.startsWith("https://") || img.startsWith("http://")) return img;
-    const clean = img.replace(/^public[\\/]/, "").replace(/\\/g, "/");
-    return `${adminUrl}${clean.startsWith("/") ? clean : "/" + clean}`;
-};
-
-// 2. SEO Meta Tag Injection
-// Intercept article routes to inject dynamic meta tags before serving HTML
-app.get('/:category/:subcategory/:slugId', async (req, res, next) => {
-    try {
-        const { slugId } = req.params;
-        if (slugId.includes('.')) return next(); // Skip files
-
-        // Extract publicId from "slug-id" (e.g., landslide-in-kullu-villagers-terrified-6984311266)
-        const match = slugId.match(/(\d+)$/);
-        const publicId = match ? match[1] : null;
-
-        const article = await Article.findOne({ publicId });
-
-        if (!article) {
-            return res.status(404).send('Article not found');
-        }
-
-        const filePath = path.resolve(__dirname, '../frontend/dist/index.html');
-        if (!fs.existsSync(filePath)) {
-            return res.status(500).send('Production build not found. Run npm run build first.');
-        }
-
-        let html = fs.readFileSync(filePath, 'utf8');
-
-        // Replace placeholders with dynamic content
-        // Note: Using regex with 'g' flag to replace all occurrences if needed
-        const siteUrl = "https://korsimnaturals.com";
-        const title = article.title + " | Korsim Naturals";
-        const desc = (article.summary || article.seoMetadata?.description || "").substring(0, 160);
-        const img = toAbsoluteUrl(article.featuredImage);
-
-        html = html
-            .replace(/__OG_TITLE__/g, title)
-            .replace(/__OG_DESCRIPTION__/g, desc)
-            .replace(/__OG_IMAGE__/g, img)
-            .replace(/__OG_URL__/g, `${siteUrl}${req.originalUrl}`);
-
-        res.send(html);
-    } catch (error) {
-        console.error('SEO Injection Error:', error);
-        res.status(500).send('An error occurred');
+// 2. PRERENDER MIDDLEWARE - Must be BEFORE all other middleware
+// Middleware to log User-Agents and force Prerender for known bots
+app.use((req, res, next) => {
+    const userAgent = req.headers['user-agent'] || '';
+    if (userAgent.includes('LinkedInBot') || userAgent.includes('facebookexternalhit')) {
+        console.log(`[BOT DETECTED]: ${userAgent} - Requesting: ${req.url}`);
+        req.shouldShowPrerender = true;
     }
+    next();
 });
+app.use(prerender);
 
 // 3. Middlewares
 app.use((req, res, next) => {
@@ -139,30 +100,16 @@ app.use((req, res, next) => {
 });
 
 // 5. Routes
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'OK', message: 'Server is running', version: process.version });
+});
+
 app.use('/api', apiRoutes);
 app.use('/admin', adminRoutes);
 app.use('/author', authorRoutes);
 
-// Serve static assets from the frontend build
-app.use(express.static(path.join(__dirname, '../frontend/dist')));
-
-// Fallback: All other routes serve index.html with default placeholders
-app.get('*', (req, res) => {
-    const filePath = path.resolve(__dirname, '../frontend/dist/index.html');
-    if (fs.existsSync(filePath)) {
-        let html = fs.readFileSync(filePath, 'utf8');
-        const siteUrl = "https://korsimnaturals.com";
-
-        // Fill defaults for non-article pages
-        html = html
-            .replace(/__OG_TITLE__/g, "Daily News Views | Top News Headlines")
-            .replace(/__OG_DESCRIPTION__/g, "Get the latest news and top headlines.")
-            .replace(/__OG_IMAGE__/g, `${siteUrl}/logo1.webp`)
-            .replace(/__OG_URL__/g, siteUrl);
-
-        return res.send(html);
-    }
-    res.status(404).send('Not found');
+app.get('/', (req, res) => {
+    res.redirect('/author/login');
 });
 
 // 6. Error Handling
@@ -183,7 +130,7 @@ app.use((err, req, res, next) => {
 const startServer = async () => {
     // Start listening immediately (Prevents Hostinger 503)
     app.listen(PORT, () => {
-        console.log(` SERVER BOOTED SUCCESS ON PORT: ${PORT}`);
+        console.log(`>>> SERVER BOOTED SUCCESS ON PORT: ${PORT} <<<`);
     });
 
     try {
