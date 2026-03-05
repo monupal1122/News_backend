@@ -171,7 +171,7 @@ const truncateDescription = (text, maxLength = 200) => {
 };
 
 // Article SEO route - catches bot requests for article URLs
-app.get('/articles/:category/:subcategory/:slugId', async (req, res, next) => {
+app.get('/:category/:subcategory/:slugId', async (req, res, next) => {
     const userAgent = req.headers['user-agent'] || '';
     
     // Only process requests from social bots
