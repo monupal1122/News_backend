@@ -345,7 +345,15 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    "https://korsimnaturals.com",
+    "https://admin.korsimnaturals.com"
+  ],
+  methods: ["GET","POST","PUT","DELETE","OPTIONS"],
+  credentials: true
+}));
+
 app.use(helmet({
     contentSecurityPolicy: false,
 }));
@@ -398,8 +406,14 @@ app.get('/', (req, res) => {
 });
 
 // SPA fallback - serves React app for all other routes
+// In Express 5, we use app.use() with a handler function for catch-all
 // This should be the LAST route
-app.get('*', (req, res) => {
+app.use((req, res, next) => {
+    // Skip if response is already sent
+    if (res.headersSent) {
+        return next();
+    }
+    
     // Try to find index.html in various locations
     const possiblePaths = [
         path.join(__dirname, 'frontend/dist/index.html'),
