@@ -42,7 +42,7 @@ const PORT = process.env.PORT || 3000;
 
 // Site configuration
 const SITE_URL = process.env.SITE_URL || 'https://korsimnaturals.com';
-const SITE_NAME = 'Daily News Views';
+const SITE_NAME = 'Daily News Views hogya ';
 
 console.log('--- SYSTEM STACK ---');
 console.log(`Node Version: ${process.version}`);
@@ -171,7 +171,7 @@ const truncateDescription = (text, maxLength = 200) => {
 };
 
 // Article SEO route - catches bot requests for article URLs
-app.get('/:category/:subcategory/:slugId', async (req, res, next) => {
+app.get('/articles/:category/:subcategory/:slugId', async (req, res, next) => {
     const userAgent = req.headers['user-agent'] || '';
     
     // Only process requests from social bots
@@ -353,7 +353,6 @@ app.use(cors({
   methods: ["GET","POST","PUT","DELETE","OPTIONS"],
   credentials: true
 }));
-
 app.use(helmet({
     contentSecurityPolicy: false,
 }));
