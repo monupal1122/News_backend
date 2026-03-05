@@ -38,7 +38,7 @@ process.on('unhandledRejection', (reason, promise) => {
 
 const app = express();
 // USE THE PORT HOSTINGER GIVES US, OR FALLBACK TO 5000
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 // Site configuration
 const SITE_URL = process.env.SITE_URL || 'https://korsimnaturals.com';
