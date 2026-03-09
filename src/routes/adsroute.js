@@ -38,7 +38,7 @@ router.put("/adsupdate/:id", upload.single('image'), AdsUpdate);
 router.delete("/adsdelete/:id", Adsdelete);
 
 // GET ALL PUBLIC ADS (FOR FRONTEND)
-router.get("/", AllAds);
+router.get("/getall", AllAds);
 
 
 
