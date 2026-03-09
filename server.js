@@ -114,10 +114,14 @@ app.get('/', (req, res) => res.redirect('/author/login'));
 
 // SPA Fallback - serves React app for all other routes
 app.use((req, res, next) => {
-    if (res.headersSent) return next();
+    if (req.originalUrl.startsWith('/api')) {
+        return res.status(404).json({ error: "API route not found" });
+    }
+
     const indexPath = getIndexPath();
     if (indexPath) return res.sendFile(indexPath);
-    res.status(200).send(`<!DOCTYPE html><html><head><title>${SITE_NAME}</title></head><body><div id="root"><h1>${SITE_NAME}</h1><p>Loading...</p></div></body></html>`);
+
+    res.status(404).send("Not Found");
 });
 
 // ============================================
